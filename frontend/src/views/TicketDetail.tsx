@@ -67,7 +67,7 @@ export function TicketDetail({
           <p className="text-[14px] font-semibold text-ink-2">
             Ticket no encontrado
           </p>
-          <p className="max-w-[240px] text-[13px] leading-relaxed text-ink-3">
+          <p className="max-w-[240px] text-[15px] leading-relaxed text-ink-3">
             No existe en el servidor con este identificador. Cierra el panel
             con la ✕ para volver a la cola.
           </p>

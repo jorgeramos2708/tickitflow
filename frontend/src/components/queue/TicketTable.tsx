@@ -197,7 +197,7 @@ export function TicketTable({
       <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-rule-2 bg-raised px-6 py-16 text-center">
         <Inbox size={22} strokeWidth={1.5} aria-hidden className="text-ink-3" />
         <p className="text-[15px] font-semibold text-ink">{emptyTitle}</p>
-        <p className="max-w-sm text-[13px] text-ink-3">{emptyHint}</p>
+        <p className="max-w-sm text-[15px] text-ink-3">{emptyHint}</p>
         {emptyAction}
       </div>
     );

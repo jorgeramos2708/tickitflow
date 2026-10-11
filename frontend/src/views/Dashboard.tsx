@@ -318,9 +318,6 @@ export function Dashboard() {
       <section className="mt-8" aria-label="Cola SLA crítico">
         <div className="mb-3 flex flex-wrap items-center gap-3">
           <h2 className="text-[15px] font-semibold tracking-tight">SLA crítico</h2>
-          <span className="font-mono text-[11px] tabular-nums text-ink-3">
-            {critical.length} en riesgo o vencidos
-          </span>
           <Link
             to="/cola/incidente"
             className="ml-auto flex items-center gap-1 text-[13px] link-grow hover:link-grow-hover font-bold text-amber hover:text-amber-hi"
@@ -362,7 +359,7 @@ export function Dashboard() {
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-12">
         <Module title="Mis asignados" count={`${mine.length}`} className="lg:col-span-5">
           {mine.length === 0 ? (
-            <p className="px-4 py-6 text-[13px] text-ink-3">
+            <p className="px-4 py-6 text-[15px] text-ink-3">
               No tienes tickets abiertos asignados. Toma uno desde la cola de
               incidentes.
             </p>

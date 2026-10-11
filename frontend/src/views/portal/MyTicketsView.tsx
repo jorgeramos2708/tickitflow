@@ -43,7 +43,7 @@ export function MyTicketsView() {
           <p className="text-[15px] font-medium text-ink">
             Aún no has registrado nada
           </p>
-          <p className="max-w-sm text-[13px] text-ink-3">
+          <p className="max-w-sm text-[15px] text-ink-3">
             Cuando reportes un problema o pidas algo del catálogo, lo verás aquí
             con su número y su estado de atención.
           </p>

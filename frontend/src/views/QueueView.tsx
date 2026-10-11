@@ -293,7 +293,7 @@ function EmptyPane() {
       <p className="text-[14px] font-semibold text-ink-2">
         Ningún ticket seleccionado
       </p>
-      <p className="max-w-[240px] text-[13px] leading-relaxed text-ink-3">
+      <p className="max-w-[240px] text-[15px] leading-relaxed text-ink-3">
         Elige un ticket de la lista y su detalle se abrirá aquí, sin perder la
         cola de vista.
       </p>
@@ -312,7 +312,7 @@ function HydrateError({ onRetry }: { onRetry: () => void }) {
       <p className="text-[15px] font-semibold text-ink">
         No se pudo cargar la cola del servidor
       </p>
-      <p className="max-w-sm text-[13px] leading-relaxed text-ink-3">
+      <p className="max-w-sm text-[15px] leading-relaxed text-ink-3">
         La conexión con los microservicios falló. Esto no significa que no
         haya tickets — reintenta cuando el servicio responda.
       </p>
@@ -330,7 +330,7 @@ function SearchingPane() {
     <div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center">
       <Search size={24} strokeWidth={1.5} aria-hidden className="animate-pulse text-ink-3" />
       <p className="text-[14px] font-semibold text-ink-2">Buscando el ticket…</p>
-      <p className="max-w-[240px] text-[13px] leading-relaxed text-ink-3">
+      <p className="max-w-[240px] text-[15px] leading-relaxed text-ink-3">
         Es más antiguo que la primera página de la cola; estamos cargando
         páginas anteriores del servidor.
       </p>
@@ -350,7 +350,7 @@ export function EmptyQueue({
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-2 rounded-2xl border border-dashed border-rule-2 bg-raised px-6 py-16 text-center">
       <p className="text-[15px] font-medium text-ink">{title}</p>
-      <p className="text-[13px] text-ink-3">{hint}</p>
+      <p className="text-[15px] text-ink-3">{hint}</p>
       {action}
     </div>
   );

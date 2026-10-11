@@ -177,7 +177,7 @@ export function NotificationsBell() {
             </button>
           </header>
           {items.length === 0 ? (
-            <p className="px-4 py-6 text-center text-[13px] text-ink-3">
+            <p className="px-4 py-6 text-center text-[15px] text-ink-3">
               Sin eventos todavía. Cada registro o cambio de estado aparecerá
               aquí en cuanto ocurra.
             </p>
@@ -203,14 +203,6 @@ export function NotificationsBell() {
               ))}
             </ul>
           )}
-          <footer className="border-t border-rule px-4 py-2">
-            <p className="text-[11px] text-ink-3">
-              <span className="font-mono text-[10.5px]">
-                itil.events → notifications.feed
-              </span>{" "}
-              · SSE con respaldo a polling
-            </p>
-          </footer>
         </div>
       ) : null}
     </div>

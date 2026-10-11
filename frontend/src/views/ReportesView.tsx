@@ -158,17 +158,7 @@ export function ReportesView() {
             Reportes
           </h1>
           <p className="mt-1 text-[13px] text-ink-3">
-            Indicadores ITIL calculados en vivo sobre{" "}
-            <span className="font-mono tabular-nums">{tickets.length}</span>{" "}
-            tickets de la cola ·{" "}
-            <span
-              className={cn(
-                "font-mono tabular-nums",
-                stats.breached > 0 ? "text-signal" : "text-good",
-              )}
-            >
-              {stats.breached} vencidos abiertos
-            </span>
+            Indicadores calculados respecto a los tickets en la cola
           </p>
         </div>
         <Button
@@ -218,11 +208,7 @@ export function ReportesView() {
               label={PRACTICE_LABEL[m.practice]}
               display={m.count ? fmtDuration(m.minutes) : "—"}
               share={m.minutes / maxMttr}
-            >
-              <span className="font-mono text-[11px] tabular-nums text-ink-3">
-                n={m.count}
-              </span>
-            </BarRow>
+            />
           ))}
         </Module>
 
@@ -234,11 +220,7 @@ export function ReportesView() {
               display={c.total ? `${Math.round(c.pct)}%` : "—"}
               share={c.pct / 100}
               tone={c.pct >= 90 ? "good" : c.pct >= 70 ? "amber" : "signal"}
-            >
-              <span className="font-mono text-[11px] tabular-nums text-ink-3">
-                n={c.total}
-              </span>
-            </BarRow>
+            />
           ))}
         </Module>
 
