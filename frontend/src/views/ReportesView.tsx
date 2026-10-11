@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Download } from "lucide-react";
 import { Module } from "../components/ui/Module";
 import { WeekChart } from "../components/ui/WeekChart";
@@ -14,7 +14,7 @@ import {
   type TicketStatus,
 } from "../lib/types";
 
-const DAY_LABELS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+const DAY_LABELS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
 /** Barra horizontal hairline: pista de filete, relleno por ancho, valor mono. */
 function BarRow({
@@ -61,6 +61,12 @@ const PRIORITIES: Priority[] = ["P1", "P2", "P3", "P4"];
 
 export function ReportesView() {
   const { tickets, now } = useStore();
+  const [volumeFooter, setVolumeFooter] = useState({
+    total: 0,
+    avg: 0,
+    allZero: false,
+    promInline: true,
+  });
 
   /** Histograma de los últimos 7 días derivado de la cola real (hidratada). */
   const volume = useMemo(() => {
@@ -254,11 +260,19 @@ export function ReportesView() {
 
         <Module title="Últimos 7 días" className="lg:col-span-5">
           <div className="px-4 py-4">
-            <WeekChart data={volume} todayIndex={volume.length - 1} />
+            <WeekChart
+              data={volume}
+              todayIndex={volume.length - 1}
+              footerTotal={(total, avg, allZero, promInline) =>
+                setVolumeFooter({ total, avg, allZero, promInline })
+              }
+            />
             <p className="mt-3 font-mono text-[11px] text-ink-3">
-              {volume.reduce((acc, d) => acc + d.count, 0) === 0
+              {volumeFooter.allZero
                 ? "Sin registros esta semana"
-                : `${volume.reduce((acc, d) => acc + d.count, 0)} registrados esta semana`}
+                : volumeFooter.promInline === false
+                  ? `${volumeFooter.total} registrados esta semana · prom. ${volumeFooter.avg.toFixed(1)} por día`
+                  : `${volumeFooter.total} registrados esta semana`}
             </p>
           </div>
         </Module>
