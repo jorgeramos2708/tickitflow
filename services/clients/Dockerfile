@@ -1,0 +1,18 @@
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY package.json ./
+RUN npm install
+COPY jest.config.js tsconfig.build.json ./
+COPY src ./src
+RUN npm test
+RUN npm run build
+
+FROM node:22-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+COPY package.json ./
+EXPOSE 4010
+USER node
+CMD ["node", "dist/main.js"]

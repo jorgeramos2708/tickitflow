@@ -180,6 +180,19 @@ export interface ApiMetric {
   atRiskEnd: number;
 }
 
+export interface ApiClient {
+  id: number;
+  code: string;
+  name: string;
+  type: "interno" | "externo";
+  email: string;
+  phone: string;
+  company: string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const api = {
   health: (signal?: AbortSignal) =>
     request<{ status: string }>("/incidents/health", null, { signal }),
@@ -397,6 +410,47 @@ export const api = {
     request<ApiMetric[]>(
       `/incidents/metrics/daily?days=${days}`,
       token,
+    ),
+
+  // ── Clientes (interno/externo) ──
+  listClients: (token: string) =>
+    request<ApiClient[]>(
+      "/clients/clients",
+      token,
+    ),
+
+  createClient: (
+    token: string,
+    body: {
+      name: string;
+      type: "interno" | "externo";
+      email?: string;
+      phone?: string;
+      company?: string;
+      notes?: string;
+    },
+  ) =>
+    request<ApiClient>("/clients/clients", token, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  updateClient: (
+    token: string,
+    code: string,
+    body: {
+      name?: string;
+      type?: "interno" | "externo";
+      email?: string;
+      phone?: string;
+      company?: string;
+      notes?: string;
+    },
+  ) =>
+    request<ApiClient>(
+      `/clients/clients/${encodeURIComponent(code)}`,
+      token,
+      { method: "PATCH", body: JSON.stringify(body) },
     ),
 };
 

@@ -15,6 +15,7 @@ jobs:
           - problems
           - changes
           - cmdb
+          - clients
           - kb
           - notifications
     steps:
@@ -79,7 +80,7 @@ jobs:
           elapsed=0
           while [ $elapsed -lt $timeout ]; do
             all_healthy=true
-            for svc in auth incidents problems changes cmdb kb notifications; do
+            for svc in auth incidents problems changes cmdb clients kb notifications; do
               if ! curl -sf "http://127.0.0.1/api/$svc/health" > /dev/null 2>&1; then
                 all_healthy=false
                 echo "Esperando: $svc (elapsed=${elapsed}s)"
@@ -161,7 +162,7 @@ jobs:
             $COMPOSE build 2>&1 | tail -3
 
             echo "--- tag + push a Zot ---"
-            for svc in auth incidents problems changes cmdb kb notifications frontend; do
+            for svc in auth incidents problems changes cmdb clients kb notifications frontend; do
               COMPOSE_IMAGE="tickitflow-$svc"
               if docker image inspect "$COMPOSE_IMAGE" > /dev/null 2>&1; then
                 docker tag "$COMPOSE_IMAGE" "registry.edrs.xyz/tickitflow/$svc:latest"
@@ -194,7 +195,7 @@ jobs:
             elapsed=0
             while [ $elapsed -lt $MAX_WAIT ]; do
               all_ok=true
-              for svc in auth incidents problems changes cmdb kb notifications; do
+              for svc in auth incidents problems changes cmdb clients kb notifications; do
                 if ! curl -sf "https://$DOMAIN/api/$svc/health" > /dev/null 2>&1; then
                   all_ok=false
                   break

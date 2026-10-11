@@ -247,6 +247,30 @@ async function main() {
     metrics.status === 200 && Array.isArray(metrics.json) && metrics.json.length >= 1,
   );
 
+  // 6b. Módulo de clientes (RBAC)
+  const clientsHealth = await req("/api/clients/health");
+  check("clients-service sano", clientsHealth.status === 200 && clientsHealth.json?.status === "ok");
+
+  const userClients = await req("/api/clients/clients", { token: tu });
+  check("usuario de portal NO lista clientes (403)", userClients.status === 403, String(userClients.status));
+
+  const createdClient = await req("/api/clients/clients", {
+    method: "POST",
+    token: ta,
+    body: { name: `E2E ${stamp}: Cliente externo`, type: "externo", email: "e2e@example.com", company: "E2E Co." },
+  });
+  check(
+    "agente crea cliente externo (CLI-N)",
+    (createdClient.status === 200 || createdClient.status === 201) && /^CLI-/.test(createdClient.json?.code ?? ""),
+    `code=${createdClient.json?.code}`,
+  );
+
+  const clientList = await req("/api/clients/clients", { token: ta });
+  check(
+    "agente lista el directorio de clientes",
+    clientList.status === 200 && Array.isArray(clientList.json) && clientList.json.length >= 1,
+  );
+
   // 7. Notificaciones por rol
   await new Promise((r) => setTimeout(r, 1500));
   const feedAgente = await req("/api/notifications/notifications?limit=50", { token: ta });

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Download } from "lucide-react";
 import { Module } from "../components/ui/Module";
+import { WeekChart } from "../components/ui/WeekChart";
 import { PriorityChip, StatusBadge } from "../components/ui/Chips";
 import { Button } from "../components/ui/Button";
 import { cn } from "../lib/cn";
@@ -251,65 +252,13 @@ export function ReportesView() {
           ))}
         </Module>
 
-        <Module title="Volumen 7 días" className="lg:col-span-5">
+        <Module title="Últimos 7 días" className="lg:col-span-5">
           <div className="px-4 py-4">
-            <svg
-              viewBox="0 0 168 64"
-              className="w-full"
-              role="img"
-              aria-label="Tickets registrados por día, últimos 7 días"
-            >
-              {(() => {
-                const max = Math.max(...volume.map((d) => d.count), 1);
-                return volume.map((d, i) => {
-                  const h = (d.count / max) * 36;
-                  // +4px de sangría: "dom"/"sáb" centrados quedan completos
-                  // dentro del viewBox (antes la primera etiqueta se clipeaba)
-                  const x = 4 + i * 24;
-                  const esDescanso = d.day === "sáb" || d.day === "dom";
-                  return (
-                    <g key={`${d.day}-${i}`}>
-                      <rect
-                        x={x}
-                        y={46 - h}
-                        width={14}
-                        height={h}
-                        className={esDescanso ? "fill-ink/35" : "fill-ink"}
-                      />
-                      <text
-                        x={x + 7}
-                        y={43 - h}
-                        textAnchor="middle"
-                        fontSize={8}
-                        className="fill-ink-2 font-mono tabular-nums"
-                      >
-                        {d.count}
-                      </text>
-                      <text
-                        x={x + 7}
-                        y={58}
-                        textAnchor="middle"
-                        fontSize={8}
-                        className="fill-ink-3"
-                      >
-                        {d.day}
-                      </text>
-                    </g>
-                  );
-                });
-              })()}
-              <line
-                x1={0}
-                y1={46.5}
-                x2={168}
-                y2={46.5}
-                className="stroke-rule-2"
-                strokeWidth={1}
-              />
-            </svg>
+            <WeekChart data={volume} todayIndex={volume.length - 1} />
             <p className="mt-3 font-mono text-[11px] text-ink-3">
-              {volume.reduce((acc, d) => acc + d.count, 0)} registrados esta
-              semana
+              {volume.reduce((acc, d) => acc + d.count, 0) === 0
+                ? "Sin registros esta semana"
+                : `${volume.reduce((acc, d) => acc + d.count, 0)} registrados esta semana`}
             </p>
           </div>
         </Module>

@@ -10,6 +10,7 @@ import {
   LogOut,
   Search,
   Settings,
+  Users,
 } from "lucide-react";
 import { LogoLockup } from "../../brand/Logo";
 import { cn } from "../../lib/cn";
@@ -26,6 +27,7 @@ const ICONS = {
   problema: Search,
   cambio: ArrowLeftRight,
   cmdb: Database,
+  clientes: Users,
   kb: BookOpen,
   reportes: BarChart3,
   config: Settings,
@@ -208,6 +210,9 @@ export function PracticeRail() {
             </li>
             <li>
               <RailLink to="/cmdb" label="CMDB" icon="cmdb" countKey="cmdb" />
+            </li>
+            <li>
+              <RailLink to="/clientes" label="Clientes" icon="clientes" />
             </li>
             <li>
               <RailLink to="/kb" label="Base de conocimiento" icon="kb" countKey="kb" />

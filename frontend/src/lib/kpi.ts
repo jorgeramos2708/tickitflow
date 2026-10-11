@@ -188,3 +188,24 @@ export function seriesOf(
     prev: last14.slice(0, 7).map((d) => d[key]),
   };
 }
+
+/**
+ * EL helper de la gráfica semanal: máximo, promedio (total/7), total e
+ * índices del pico (empates incluidos, nada resaltado si todo es 0) —
+ * calculado una sola vez, nunca dentro del render de cada barra.
+ */
+export function weekChartStats(values: number[]): {
+  total: number;
+  max: number;
+  avg: number;
+  peakIndexes: number[];
+} {
+  const total = values.reduce((a, b) => a + b, 0);
+  const max = values.length > 0 ? Math.max(...values) : 0;
+  const avg = total / 7;
+  const peakIndexes =
+    max > 0
+      ? values.map((v, i) => (v === max ? i : -1)).filter((i) => i >= 0)
+      : [];
+  return { total, max, avg, peakIndexes };
+}

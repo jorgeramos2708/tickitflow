@@ -66,21 +66,54 @@ export function SLAMeter({
           style={{ width: `${Math.round(sla.progress * 100)}%` }}
         />
       </div>
-      <span
-        className={cn(
-          "flex w-[76px] items-center gap-1.5 font-mono text-[12px] tabular-nums",
-          SLA_LEVEL_TEXT[sla.level],
-        )}
-      >
-        {aboutToBreach ? (
-          <span aria-hidden className="size-2 shrink-0 rounded-full bg-amber-fill animate-pulse-dot" />
-        ) : null}
-        {done
-          ? sla.remainingMin >= 0
-            ? "Cumplido"
-            : "Vencido"
-          : fmtRemaining(sla.remainingMin)}
-      </span>
+      {done ? (
+        <span
+          className={cn(
+            "flex w-[76px] flex-col items-start font-mono text-[12px] tabular-nums leading-tight",
+            SLA_LEVEL_TEXT[sla.level],
+          )}
+        >
+          {aboutToBreach ? (
+            <span aria-hidden className="size-2 shrink-0 rounded-full bg-amber-fill animate-pulse-dot" />
+          ) : null}
+          <span>
+            {sla.remainingMin >= 0 ? "Cumplido" : "Vencido"}
+          </span>
+          {sla.remainingMin < 0 ? (
+            <span className="text-[10.5px] opacity-75">
+              hace {fmtDuration(-sla.remainingMin)}
+            </span>
+          ) : null}
+        </span>
+      ) : sla.remainingMin < 0 ? (
+        // Vencido y en curso: estado arriba, tiempo transcurrido debajo
+        <span
+          className={cn(
+            "flex w-[76px] flex-col items-start font-mono text-[12px] tabular-nums leading-tight",
+            SLA_LEVEL_TEXT[sla.level],
+          )}
+        >
+          {aboutToBreach ? (
+            <span aria-hidden className="size-2 shrink-0 rounded-full bg-amber-fill animate-pulse-dot" />
+          ) : null}
+          <span>Vencido</span>
+          <span className="text-[10.5px] opacity-75">
+            hace {fmtDuration(-sla.remainingMin)}
+          </span>
+        </span>
+      ) : (
+        <span
+          className={cn(
+            "flex w-[76px] items-center gap-1.5 font-mono text-[12px] tabular-nums",
+            SLA_LEVEL_TEXT[sla.level],
+          )}
+        >
+          {aboutToBreach ? (
+            <span aria-hidden className="size-2 shrink-0 rounded-full bg-amber-fill animate-pulse-dot" />
+          ) : null}
+          {fmtRemaining(sla.remainingMin)}
+        </span>
+      )}
     </div>
   );
 }

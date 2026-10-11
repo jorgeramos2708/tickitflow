@@ -6,6 +6,7 @@ import { StoreProvider } from "./lib/store";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ChangesView, ChangeDetail } from "./views/ChangesView";
 import { CmdbView } from "./views/CmdbView";
+import { ClientesView } from "./views/ClientesView";
 import { KbArticleView, KbView } from "./views/KbView";
 import { ProblemDetail, ProblemsView } from "./views/ProblemsView";
 import { NewChange } from "./views/NewChange";
@@ -131,6 +132,7 @@ function Shell() {
             <Route path="/cambios" element={<ChangesView />} />
             <Route path="/cambios/:id" element={<ChangeDetail />} />
             <Route path="/cmdb" element={<CmdbView />} />
+            <Route path="/clientes" element={<ClientesView />} />
             <Route path="/kb" element={<KbView />} />
             <Route path="/kb/:id" element={<KbArticleView />} />
             <Route

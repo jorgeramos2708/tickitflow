@@ -166,6 +166,32 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  clients:
+    build: ./services/clients
+    environment:
+      DATABASE_URL: postgres://tickit:${POSTGRES_PASSWORD:-tickit}@clients-db:5432/clients
+      JWT_SECRET: ${JWT_SECRET:-tickitflow-dev-secret-not-for-production-32chars}
+      PORT: "4010"
+    depends_on:
+      clients-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  clients-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: tickit
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tickit}
+      POSTGRES_DB: clients
+    volumes:
+      - clients-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tickit -d clients"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   kb-db:
     image: postgres:16-alpine
     environment:
@@ -301,6 +327,7 @@ volumes:
   problems-db-data:
   changes-db-data:
   cmdb-db-data:
+  clients-db-data:
   kb-db-data:
   notifications-db-data:
   prometheus-data:

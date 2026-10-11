@@ -4,6 +4,7 @@ import { ArrowDown, ArrowRight, ArrowUp } from "lucide-react";
 import { TicketTable } from "../components/queue/TicketTable";
 import { Button } from "../components/ui/Button";
 import { LoadingBox, Module } from "../components/ui/Module";
+import { WeekChart } from "../components/ui/WeekChart";
 import { seriesOf, weeklyDelta } from "../lib/kpi";
 import { VOLUME_7D } from "../lib/data";
 import { SLA_LEVEL_TEXT, fmtDuration, fmtRelative, fmtRemaining, slaOf } from "../lib/sla";
@@ -178,64 +179,6 @@ function volumeData(
     days.push({ day: label.charAt(0).toUpperCase() + label.slice(1), count });
   }
   return days;
-}
-
-function VolumeChart({
-  data,
-  live,
-}: {
-  data: Array<{ day: string; count: number }>;
-  live: boolean;
-}) {
-  const max = Math.max(...data.map((d) => d.count), 1);
-  return (
-    <svg
-      viewBox="0 0 168 64"
-      className="mt-2 w-full"
-      role="img"
-      aria-label={
-        live
-          ? "Tickets registrados por día, últimos 7 días"
-          : "Tickets registrados por día, últimos 7 días (datos de demostración)"
-      }
-    >
-      {data.map((d, i) => {
-        const h = (d.count / max) * 36;
-        // +4px de sangría para que "Dom" centrado no se clipee en el borde
-        const x = 4 + i * 24;
-        return (
-          <g key={d.day}>
-            <rect
-              x={x}
-              y={46 - h}
-              width={14}
-              height={h}
-              className={i >= 5 ? "fill-ink/35" : "fill-ink"}
-            />
-            <text
-              x={x + 7}
-              y={43 - h}
-              textAnchor="middle"
-              fontSize={8}
-              className="fill-ink-2 font-mono tabular-nums"
-            >
-              {d.count}
-            </text>
-            <text
-              x={x + 7}
-              y={58}
-              textAnchor="middle"
-              fontSize={8}
-              className="fill-ink-3"
-            >
-              {d.day}
-            </text>
-          </g>
-        );
-      })}
-      <line x1={0} y1={46.5} x2={168} y2={46.5} className="stroke-rule-2" strokeWidth={1} />
-    </svg>
-  );
 }
 
 export function Dashboard() {
@@ -467,10 +410,11 @@ export function Dashboard() {
 
         <Module title="Últimos 7 días" className="lg:col-span-3">
           <div className="px-4 py-3">
-            <VolumeChart data={volume} live={live} />
+            <WeekChart data={volume} todayIndex={volume.length - 1} />
             <p className="mt-3 flex items-center gap-1.5 font-mono text-[11px] text-ink-3">
-              {volume.reduce((acc, d) => acc + d.count, 0)} registrados esta
-              semana
+              {volume.reduce((acc, d) => acc + d.count, 0) === 0
+                ? "Sin registros esta semana"
+                : `${volume.reduce((acc, d) => acc + d.count, 0)} registrados esta semana`}
               {!live ? (
                 <span className="text-[10.5px] font-semibold text-ink-3" title="Serie de demostración — no real en modo demo">
                   demo
