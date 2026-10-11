@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from "react";
 import { cn } from "../../lib/cn";
 import { weekChartStats } from "../../lib/kpi";
 
@@ -23,40 +22,24 @@ interface WeekDatum {
   count: number;
 }
 
-/** Ancho del margen derecho para la etiqueta "prom." */
+/** Margen derecho para la etiqueta "prom." — fuera del área de barras */
 const PROM_MARGIN = 44;
-/** Ancho mínimo de tarjeta para mostrar la etiqueta dentro de la gráfica */
-const MIN_WIDTH_FOR_INLINE_PROM = 320;
+
 /**
  * Gráfica semanal (Lun–Dom) con jerarquía: pico resaltado, ceros como
- * línea fina, línea de promedio punteada en margen propio, tooltip
- * accesible y resumen en aria-label. HTML/CSS flex — sin librerías.
+ * línea fina, línea de promedio punteada con etiqueta en margen propio,
+ * tooltip accesible y resumen en aria-label. HTML/CSS flex — sin
+ * librerías, solo tokens de color. La etiqueta "prom." vive SIEMPRE en
+ * el margen derecho de 44px, fuera del área de barras, sin callbacks.
  */
 export function WeekChart({
   data,
   todayIndex,
-  footerTotal,
 }: {
   data: WeekDatum[];
   /** Índice del día actual (negrita + punto 4px, no color de barra) */
   todayIndex?: number;
-  /** Callback: el pie recibe el total, el promedio y si la etiqueta "prom." va inline */
-  footerTotal?: (total: number, avg: number, allZero: boolean, promInline: boolean) => void;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [containerW, setContainerW] = useState(400);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const ro = new ResizeObserver((entries) => {
-      for (const e of entries) {
-        setContainerW(e.contentRect.width);
-      }
-    });
-    ro.observe(containerRef.current);
-    return () => ro.disconnect();
-  }, []);
-
   const values = data.map((d) => d.count);
   const { total, max, avg, peakIndexes } = weekChartStats(values);
   const allZero = total === 0;
@@ -72,16 +55,9 @@ export function WeekChart({
   const barH = (v: number) => (max > 0 ? (v / max) * 80 : 0);
   const avgH = barH(Math.min(avg, max));
 
-  const showInlineProm = !allZero && containerW >= MIN_WIDTH_FOR_INLINE_PROM;
-
-  // Notificar al pie (para tarjetas angostas)
-  useEffect(() => {
-    if (footerTotal) footerTotal(total, avg, allZero, showInlineProm);
-  }, [footerTotal, total, avg, allZero, showInlineProm]);
-
   return (
-    <div ref={containerRef} className="relative mt-2" role="img" aria-label={aria}>
-      <div className="flex items-end gap-1.5" style={{ paddingRight: showInlineProm ? PROM_MARGIN : 0 }}>
+    <div className="relative mt-2" role="img" aria-label={aria}>
+      <div className="flex items-end gap-1.5" style={{ paddingRight: PROM_MARGIN }}>
         {data.map((d, i) => {
           const v = d.count;
           const isPeak = peakIndexes.includes(i);
@@ -151,33 +127,28 @@ export function WeekChart({
         })}
       </div>
 
-      {/* Línea base de 0.5px bajo las barras (termina antes del margen) */}
+      {/* Línea base de 0.5px (termina antes del margen) */}
       <div
         aria-hidden
         className="absolute bottom-[18px] left-0 bg-rule-2"
-        style={{ height: "0.5px", right: showInlineProm ? PROM_MARGIN : 0 }}
+        style={{ height: "0.5px", right: PROM_MARGIN }}
       />
 
-      {/* Promedio: línea punteada en el área de barras + etiqueta en el margen derecho */}
+      {/* Promedio: línea punteada en el área de barras + etiqueta en margen */}
       {!allZero ? (
         <>
           <div
             aria-hidden
             className="pointer-events-none absolute left-0 border-t border-dotted border-rule-2"
-            style={{
-              bottom: 18 + avgH,
-              right: showInlineProm ? PROM_MARGIN : 0,
-            }}
+            style={{ bottom: 18 + avgH, right: PROM_MARGIN }}
           />
-          {showInlineProm ? (
-            <span
-              aria-hidden
-              className="pointer-events-none absolute right-0 text-[10px] font-mono tabular-nums text-ink-3"
-              style={{ bottom: 18 + avgH - 5 }}
-            >
-              prom. {avg.toFixed(1)}
-            </span>
-          ) : null}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute right-0 text-[10px] font-mono tabular-nums text-ink-3"
+            style={{ bottom: 18 + avgH - 5 }}
+          >
+            prom. {avg.toFixed(1)}
+          </span>
         </>
       ) : null}
     </div>

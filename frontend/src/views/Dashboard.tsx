@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowDown, ArrowRight, ArrowUp } from "lucide-react";
 import { TicketTable } from "../components/queue/TicketTable";
@@ -226,12 +226,6 @@ export function Dashboard() {
   );
 
   const volume = useMemo(() => volumeData(live, tickets), [live, tickets]);
-  const [volumeFooter, setVolumeFooter] = useState({
-    total: 0,
-    avg: 0,
-    allZero: false,
-    promInline: true,
-  });
 
   const activity = useMemo(() => {
     const all: { at: number; id: string; text: string }[] = [];
@@ -416,19 +410,11 @@ export function Dashboard() {
 
         <Module title="Últimos 7 días" className="lg:col-span-3">
           <div className="px-4 py-3">
-            <WeekChart
-              data={volume}
-              todayIndex={volume.length - 1}
-              footerTotal={(total, avg, allZero, promInline) =>
-                setVolumeFooter({ total, avg, allZero, promInline })
-              }
-            />
+            <WeekChart data={volume} todayIndex={volume.length - 1} />
             <p className="mt-3 flex items-center gap-1.5 font-mono text-[11px] text-ink-3">
-              {volumeFooter.allZero
+              {volume.reduce((acc, d) => acc + d.count, 0) === 0
                 ? "Sin registros esta semana"
-                : volumeFooter.promInline === false
-                  ? `${volumeFooter.total} registrados esta semana · prom. ${volumeFooter.avg.toFixed(1)} por día`
-                  : `${volumeFooter.total} registrados esta semana`}
+                : `${volume.reduce((acc, d) => acc + d.count, 0)} registrados esta semana`}
               {!live ? (
                 <span className="text-[10.5px] font-semibold text-ink-3" title="Serie de demostración — no real en modo demo">
                   demo
