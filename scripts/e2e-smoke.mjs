@@ -128,6 +128,70 @@ async function main() {
   const ownRead = await req(`/api/incidents/tickets/${userCode}`, { token: tu });
   check("usuario SÍ lee su propio ticket", ownRead.status === 200, String(ownRead.status));
 
+  // 4b. Workflow de estados: reapertura y terminales (reglas nuevas)
+  // Agente lleva el ticket del usuario a resuelto
+  await req(`/api/incidents/tickets/${userCode}`, {
+    method: "PATCH", token: ta, body: { status: "en_progreso" },
+  });
+  const resolved = await req(`/api/incidents/tickets/${userCode}`, {
+    method: "PATCH", token: ta, body: { status: "resuelto" },
+  });
+  check("agente resuelve el ticket del usuario", resolved.status === 200 && resolved.json?.status === "resuelto");
+
+  // En espera NO se resuelve mágicamente (regla 4)
+  await req(`/api/incidents/tickets/${userCode}`, {
+    method: "PATCH", token: ta, body: { status: "en_progreso" },
+  });
+  await req(`/api/incidents/tickets/${userCode}`, {
+    method: "PATCH", token: ta, body: { status: "pendiente_usuario" },
+  });
+  const magicResolve = await req(`/api/incidents/tickets/${userCode}`, {
+    method: "PATCH", token: ta, body: { status: "resuelto" },
+  });
+  check("en espera → resuelto BLOQUEADO (403)", magicResolve.status === 403, String(magicResolve.status));
+  await req(`/api/incidents/tickets/${userCode}`, {
+    method: "PATCH", token: ta, body: { status: "en_progreso" },
+  });
+
+  // Reapertura: la respuesta del usuario a un resuelto lo devuelve a en_progreso
+  await req(`/api/incidents/tickets/${userCode}`, {
+    method: "PATCH", token: ta, body: { status: "resuelto" },
+  });
+  const reopen = await req(`/api/incidents/tickets/${userCode}`, {
+    method: "PATCH", token: tu, body: { note: "Sigue fallando, no quedó resuelto." },
+  });
+  check(
+    "respuesta del usuario en RESUELTO reabre a en_progreso",
+    reopen.status === 200 && reopen.json?.status === "en_progreso",
+    `status=${reopen.json?.status}`,
+  );
+
+  // Cierre y estado terminal
+  await req(`/api/incidents/tickets/${userCode}`, {
+    method: "PATCH", token: ta, body: { status: "resuelto" },
+  });
+  const closedTicket = await req(`/api/incidents/tickets/${userCode}`, {
+    method: "PATCH", token: ta, body: { status: "cerrado" },
+  });
+  check("agente cierra el ticket", closedTicket.status === 200 && closedTicket.json?.status === "cerrado");
+
+  // Terminal: la respuesta del usuario deriva a un ticket NUEVO; el original intacto
+  const derive = await req(`/api/incidents/tickets/${userCode}`, {
+    method: "PATCH", token: tu, body: { note: "Volvió a pasar lo mismo." },
+  });
+  const derivedCode = derive.json?.code ?? null;
+  check(
+    "respuesta a CERRADO deriva a ticket nuevo (Re:)",
+    derive.status === 200 && !!derivedCode && derivedCode !== userCode && String(derive.json?.subject ?? "").startsWith(`Re: ${userCode}`),
+    `code=${derivedCode}`,
+  );
+  const stillClosed = await req(`/api/incidents/tickets/${userCode}`, { token: tu });
+  check("el ticket cerrado permanece CERRADO", stillClosed.json?.status === "cerrado", String(stillClosed.json?.status));
+  const zombie = await req(`/api/incidents/tickets/${userCode}`, {
+    method: "PATCH", token: ta, body: { note: "intentando modificar un cerrado" },
+  });
+  check("cerrado es terminal: ni el agente puede escribir (403)", zombie.status === 403, String(zombie.status));
+
   // 5. Separación de prácticas: problemas y cambios solo desde la consola
   const userProblem = await req("/api/problems/problems", {
     method: "POST",

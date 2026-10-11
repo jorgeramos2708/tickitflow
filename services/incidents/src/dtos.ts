@@ -63,9 +63,18 @@ export class CreateTicketDto {
 
 export class PatchTicketDto {
   @IsOptional()
-  @IsIn(["nuevo", "en_progreso", "pendiente_usuario", "resuelto", "cerrado"], {
-    message: "Estado no válido",
-  })
+  @IsIn(
+    [
+      "nuevo",
+      "asignado",
+      "en_progreso",
+      "pendiente_usuario",
+      "resuelto",
+      "cerrado",
+      "cancelado",
+    ],
+    { message: "Estado no válido" },
+  )
   status?: TicketStatus;
 
   @IsOptional()

@@ -9,7 +9,7 @@ import { cn } from "../../lib/cn";
 import { PORTAL_USER } from "../../lib/data";
 import { fmtRelative } from "../../lib/sla";
 import { useStore } from "../../lib/store";
-import { OPEN_STATUSES } from "../../lib/types";
+import { OPEN_STATUSES, STATUS_LABEL } from "../../lib/types";
 
 export function MyTicketsView() {
   const { tickets, now, hydrating } = useStore();
@@ -94,7 +94,13 @@ function eventLine(ev: { kind: string; to?: string; detail?: string }): string {
 
 export function PortalTicketView() {
   const { id } = useParams<{ id: string }>();
-  const { getTicket, now, addNote } = useStore();
+  const {
+    getTicket,
+    now,
+    addNote,
+    derivedNotice,
+    clearDerivedNotice,
+  } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [note, setNote] = useState("");
@@ -103,6 +109,11 @@ export function PortalTicketView() {
   );
 
   const ticket = id ? getTicket(id) : undefined;
+  const isTerminal =
+    !!ticket && (ticket.status === "cerrado" || ticket.status === "cancelado");
+  // El aviso de derivación aplica a ESTE ticket
+  const derivation =
+    derivedNotice && derivedNotice.from === id ? derivedNotice : null;
 
   if (!ticket || ticket.requester !== PORTAL_USER.name) {
     return (
@@ -125,7 +136,8 @@ export function PortalTicketView() {
   const submitNote = () => {
     const text = note.trim();
     if (!text) return;
-    addNote(ticket.id, text, PORTAL_USER.name);
+    // isEndUser: activa las reglas de reapertura del backend
+    addNote(ticket.id, text, PORTAL_USER.name, true);
     setNote("");
   };
 
@@ -172,6 +184,42 @@ export function PortalTicketView() {
       <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-12">
         <section className="sm:col-span-8" aria-label="Avances">
           <h2 className="label text-ink-2">Avances</h2>
+
+          {derivation ? (
+            <p
+              role="status"
+              className="mb-4 flex items-start gap-2 rounded-xl border border-good/40 bg-good/10 px-4 py-3 text-[13.5px] text-ink-2"
+            >
+              <span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-[2px] bg-good" />
+              <span className="min-w-0">
+                Tu respuesta registró el ticket{" "}
+                <Link
+                  to={`/portal/ticket/${derivation.to}`}
+                  className="link-grow hover:link-grow-hover font-bold text-amber hover:text-amber-hi"
+                  onClick={clearDerivedNotice}
+                >
+                  {derivation.to}
+                </Link>
+                . Este ticket permanece{" "}
+                {STATUS_LABEL[ticket.status].toLowerCase()} y no se modifica;
+                el seguimiento continúa en el nuevo.
+              </span>
+            </p>
+          ) : null}
+
+          {isTerminal ? (
+            <p className="mb-3 rounded-xl border border-rule bg-raised px-4 py-3 text-[13px] leading-relaxed text-ink-3">
+              Este ticket está{" "}
+              <strong className="font-semibold text-ink-2">
+                {STATUS_LABEL[ticket.status].toLowerCase()}
+              </strong>{" "}
+              y no puede modificarse. Si el problema persiste, escríbelo abajo:
+              registraremos un{" "}
+              <strong className="font-semibold text-ink-2">ticket nuevo</strong>{" "}
+              vinculado a este.
+            </p>
+          ) : null}
+
           <div className="mt-3 rounded-xl border border-rule bg-raised p-3">
             <TextArea
               value={note}
@@ -182,7 +230,11 @@ export function PortalTicketView() {
                   submitNote();
                 }
               }}
-              placeholder="Agregar información para el equipo (visible en tu ticket)…"
+              placeholder={
+                isTerminal
+                  ? "Cuéntanos qué sigue pasando — abriremos un ticket nuevo…"
+                  : "Agregar información para el equipo (visible en tu ticket)…"
+              }
               aria-label="Comentario"
               className="min-h-16 border-0 bg-transparent focus:border-0"
             />

@@ -3,6 +3,7 @@ import {
   PRACTICE_BG,
   PRACTICE_LABEL,
   PRIORITY_LABEL,
+  STATUS_CHIP,
   STATUS_DOT,
   STATUS_LABEL,
   type PracticeAll,
@@ -53,17 +54,16 @@ export function PriorityChip({
   );
 }
 
-/** Estado: punto + nombre, el color es solo del punto. */
+/** Estado: chip pintado del color que lo representa (dot + texto). */
 export function StatusBadge({ status }: { status: TicketStatus }) {
-  const muted = status === "cerrado" || status === "resuelto";
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 text-[12.5px]",
-        muted ? "text-ink-3" : "text-ink-2",
+        "inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 text-[12px] font-semibold",
+        STATUS_CHIP[status],
       )}
     >
-      <span aria-hidden className={cn("size-1.5 rounded-full", STATUS_DOT[status])} />
+      <span aria-hidden className={cn("size-1.5 rounded-[2px]", STATUS_DOT[status])} />
       {STATUS_LABEL[status]}
     </span>
   );

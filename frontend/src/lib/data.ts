@@ -123,11 +123,13 @@ function pickPriority(rng: () => number): Priority {
 
 function pickStatus(rng: () => number): TicketStatus {
   const r = rng();
-  if (r < 0.3) return "nuevo";
+  if (r < 0.22) return "nuevo";
+  if (r < 0.4) return "asignado";
   if (r < 0.62) return "en_progreso";
   if (r < 0.72) return "pendiente_usuario";
-  if (r < 0.88) return "resuelto";
-  return "cerrado";
+  if (r < 0.86) return "resuelto";
+  if (r < 0.94) return "cerrado";
+  return "cancelado";
 }
 
 /** Semilla sintética determinista — datos de DEMOSTRACIÓN, no reales. */

@@ -5,10 +5,12 @@ export type Impact = "alto" | "medio" | "bajo";
 export type Urgency = "alta" | "media" | "baja";
 export type TicketStatus =
   | "nuevo"
+  | "asignado"
   | "en_progreso"
   | "pendiente_usuario"
   | "resuelto"
-  | "cerrado";
+  | "cerrado"
+  | "cancelado";
 export type SlaLevel = "ok" | "warn" | "breach";
 
 export type EventKind =
@@ -79,25 +81,52 @@ export const PRACTICE_BG: Record<PracticeAll, string> = {
 
 export const STATUS_LABEL: Record<TicketStatus, string> = {
   nuevo: "Nuevo",
+  asignado: "Asignado",
   en_progreso: "En progreso",
-  pendiente_usuario: "Pendiente usuario",
+  pendiente_usuario: "En espera",
   resuelto: "Resuelto",
   cerrado: "Cerrado",
+  cancelado: "Cancelado",
 };
 
 export const STATUS_DOT: Record<TicketStatus, string> = {
-  nuevo: "bg-ink",
-  en_progreso: "bg-ink/50",
-  pendiente_usuario: "bg-amber",
-  resuelto: "bg-good",
-  cerrado: "bg-rule-2",
+  nuevo: "bg-status-nuevo",
+  asignado: "bg-status-asignado",
+  en_progreso: "bg-status-progreso",
+  pendiente_usuario: "bg-status-espera",
+  resuelto: "bg-status-resuelto",
+  cerrado: "bg-status-cerrado",
+  cancelado: "bg-rule-2",
+};
+
+/** Chip pintado del estado: fondo tenue + texto + borde del color. */
+export const STATUS_CHIP: Record<TicketStatus, string> = {
+  nuevo:
+    "border-status-nuevo/30 bg-status-nuevo/10 text-status-nuevo",
+  asignado:
+    "border-status-asignado/30 bg-status-asignado/10 text-status-asignado",
+  en_progreso:
+    "border-status-progreso/30 bg-status-progreso/10 text-status-progreso",
+  pendiente_usuario:
+    "border-status-espera/35 bg-status-espera/10 text-status-espera",
+  resuelto:
+    "border-status-resuelto/30 bg-status-resuelto/10 text-status-resuelto",
+  // Cerrado: gris oscuro/neutro — sobrio, terminal
+  cerrado:
+    "border-status-cerrado/30 bg-status-cerrado/10 text-status-cerrado",
+  // Cancelado: gris claro con borde gris (blanco en claro, chip en noche)
+  cancelado: "border-rule-2 bg-raised text-ink-3",
 };
 
 export const OPEN_STATUSES: TicketStatus[] = [
   "nuevo",
+  "asignado",
   "en_progreso",
   "pendiente_usuario",
 ];
+
+/** Estados terminales: jamás se modifican ni reabren. */
+export const TERMINAL_STATUSES: TicketStatus[] = ["cerrado", "cancelado"];
 
 export const PRIORITY_LABEL: Record<Priority, string> = {
   P1: "P1 · Crítico",

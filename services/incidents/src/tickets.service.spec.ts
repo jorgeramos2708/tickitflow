@@ -101,6 +101,45 @@ describe("TicketsService — transiciones", () => {
     expect(result.status).toBe("en_progreso");
   });
 
+  it("permite nuevo → asignado (workflow nuevo)", async () => {
+    const service = makeService(makeTicket());
+    const result = await service.patch(
+      "INC-2401",
+      { status: "asignado", assignee: "Ana Bustamante" },
+      "Jorge Ramos",
+      "agente",
+    );
+    expect(result.status).toBe("asignado");
+    expect(result.assignee).toBe("Ana Bustamante");
+  });
+
+  it("asignado → en_progreso permitido; asignado → resuelto bloqueado", async () => {
+    const service = makeService(makeTicket({ status: "asignado" }));
+    const ok = await service.patch(
+      "INC-2401",
+      { status: "en_progreso" },
+      "Jorge",
+      "agente",
+    );
+    expect(ok.status).toBe("en_progreso");
+
+    const blocked = makeService(makeTicket({ status: "asignado" }));
+    await expect(
+      blocked.patch("INC-2401", { status: "resuelto" }, "Jorge", "agente"),
+    ).rejects.toThrow(ForbiddenException);
+  });
+
+  it("nuevo → cancelado permitido (spam/duplicado)", async () => {
+    const service = makeService(makeTicket());
+    const result = await service.patch(
+      "INC-2401",
+      { status: "cancelado" },
+      "Jorge",
+      "agente",
+    );
+    expect(result.status).toBe("cancelado");
+  });
+
   it("permite en_progreso → resuelto y fija resolvedAt", async () => {
     const service = makeService(makeTicket({ status: "en_progreso" }));
     const result = await service.patch(
@@ -117,6 +156,41 @@ describe("TicketsService — transiciones", () => {
     const service = makeService(makeTicket());
     await expect(
       service.patch("INC-2401", { status: "resuelto" }, "Jorge", "agente"),
+    ).rejects.toThrow(ForbiddenException);
+  });
+
+  it("en espera NO se resuelve mágicamente: pendiente_usuario → resuelto bloqueado (regla 4)", async () => {
+    const service = makeService(makeTicket({ status: "pendiente_usuario" }));
+    await expect(
+      service.patch("INC-2401", { status: "resuelto" }, "Jorge", "agente"),
+    ).rejects.toThrow(ForbiddenException);
+  });
+
+  it("resuelto → en_progreso permitido (reapertura manual del agente)", async () => {
+    const service = makeService(makeTicket({ status: "resuelto" }));
+    const result = await service.patch(
+      "INC-2401",
+      { status: "en_progreso" },
+      "Jorge",
+      "agente",
+    );
+    expect(result.status).toBe("en_progreso");
+  });
+
+  it("cerrado es terminal: cualquier cambio bloqueado", async () => {
+    const service = makeService(makeTicket({ status: "cerrado" }));
+    await expect(
+      service.patch("INC-2401", { status: "en_progreso" }, "Jorge", "agente"),
+    ).rejects.toThrow(ForbiddenException);
+    await expect(
+      service.patch("INC-2401", { note: "x" }, "Jorge", "agente"),
+    ).rejects.toThrow(ForbiddenException);
+  });
+
+  it("cancelado es terminal: cualquier cambio bloqueado", async () => {
+    const service = makeService(makeTicket({ status: "cancelado" }));
+    await expect(
+      service.patch("INC-2401", { status: "en_progreso" }, "Jorge", "agente"),
     ).rejects.toThrow(ForbiddenException);
   });
 });
@@ -152,6 +226,113 @@ describe("TicketsService — separación de roles", () => {
     await expect(
       service.patch("INC-9999", { note: "x" }, "M. Aguilar", "usuario"),
     ).rejects.toThrow(NotFoundException);
+  });
+});
+
+describe("TicketsService — reglas de reapertura (workflow nuevo)", () => {
+  it("usuario responde a un RESUELTO propio → vuelve automáticamente a en_progreso", async () => {
+    const service = makeService(
+      makeTicket({ status: "resuelto", requester: "M. Aguilar" }),
+    );
+    const result = await service.patch(
+      "INC-2401",
+      { note: "Sigue fallando, no se resolvió" },
+      "M. Aguilar",
+      "usuario",
+    );
+    expect(result.status).toBe("en_progreso");
+    expect(
+      result.events.some(
+        (e) => e.kind === "estado" && e.to === "en_progreso" && e.from === "resuelto",
+      ),
+    ).toBe(true);
+  });
+
+  it("la nota de un AGENTE en un resuelto NO reabre", async () => {
+    const service = makeService(
+      makeTicket({ status: "resuelto", requester: "M. Aguilar" }),
+    );
+    const result = await service.patch(
+      "INC-2401",
+      { note: "Nota interna del agente" },
+      "Jorge Ramos",
+      "agente",
+    );
+    expect(result.status).toBe("resuelto");
+  });
+
+  it("usuario responde a un CERRADO propio → ticket NUEVO vinculado, el original intacto", async () => {
+    const closed = makeTicket({
+      code: "INC-2450",
+      status: "cerrado",
+      requester: "M. Aguilar",
+      subject: "VPN caída",
+    });
+    // Mock híbrido: findOne para patch + transaccional para create()
+    let nextId = 77;
+    const persisted: TicketEntity[] = [];
+    const emRepo = {
+      create: (data: Partial<TicketEntity>) => ({ ...makeTicket(), ...data }) as TicketEntity,
+      save: async (entity: TicketEntity) => {
+        entity.id = nextId++;
+        persisted.push(entity);
+        return entity;
+      },
+      update: async (id: number, patch: Partial<TicketEntity>) => {
+        const found = persisted.find((t) => t.id === id);
+        if (found) Object.assign(found, patch);
+      },
+      findOne: async ({ where }: { where: { id: number } }) =>
+        persisted.find((t) => t.id === where.id) ?? null,
+    };
+    const ticketsRepo = {
+      findOne: async () => closed,
+      target: TicketEntity,
+      manager: {
+        transaction: async (cb: (em: unknown) => Promise<unknown>) =>
+          cb({ getRepository: () => emRepo }),
+      },
+    };
+    const savedEvents: Array<Record<string, unknown>> = [];
+    const eventsRepo = {
+      save: async (e: Record<string, unknown>) => {
+        savedEvents.push(e);
+        return e;
+      },
+      find: async () => savedEvents,
+    };
+    const service = new TicketsService(ticketsRepo as never, eventsRepo as never);
+
+    const result = await service.patch(
+      "INC-2450",
+      { note: "Volvió a pasar lo mismo" },
+      "M. Aguilar",
+      "usuario",
+    );
+
+    // El resultado es el ticket NUEVO derivado, no el original
+    expect(result.code).not.toBe("INC-2450");
+    expect(result.subject).toBe("Re: INC-2450 — VPN caída");
+    expect(result.requester).toBe("M. Aguilar");
+    expect(result.status).toBe("nuevo");
+    expect(result.description).toContain("Volvió a pasar lo mismo");
+    // El original NO fue modificado
+    expect(closed.status).toBe("cerrado");
+    expect(savedEvents.filter((e) => (e as { ticketId?: number }).ticketId === closed.id)).toHaveLength(0);
+  });
+
+  it("usuario responde a un CANCELADO ajeno → 403 (no es su ticket)", async () => {
+    const service = makeService(
+      makeTicket({ status: "cancelado", requester: "Otra Persona" }),
+    );
+    await expect(
+      service.patch(
+        "INC-2401",
+        { note: "hola" },
+        "M. Aguilar",
+        "usuario",
+      ),
+    ).rejects.toThrow(ForbiddenException);
   });
 });
 

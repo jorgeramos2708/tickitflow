@@ -29,12 +29,17 @@ const ticketsUpdated = new client.Counter({
 });
 
 const ALLOWED: Record<TicketStatus, TicketStatus[]> = {
-  nuevo: ["en_progreso"],
-  en_progreso: ["pendiente_usuario", "resuelto"],
-  pendiente_usuario: ["en_progreso", "resuelto"],
-  resuelto: ["cerrado"],
-  cerrado: [],
+  // Matriz del workflow: cada estado solo habilita sus sucesores válidos
+  nuevo: ["asignado", "en_progreso", "cancelado"],
+  asignado: ["en_progreso", "cancelado"],
+  en_progreso: ["pendiente_usuario", "resuelto", "cancelado"],
+  pendiente_usuario: ["en_progreso", "cancelado"],
+  resuelto: ["cerrado", "en_progreso"], // en_progreso = reapertura
+  cerrado: [], // terminal
+  cancelado: [], // terminal
 };
+
+const TERMINAL: TicketStatus[] = ["cerrado", "cancelado"];
 
 export interface EventInput {
   at: Date;
@@ -257,6 +262,41 @@ export class TicketsService {
     const actor = roleFromToken === "usuario" ? actorFromToken : (dto.actor ?? actorFromToken);
     const now = new Date();
 
+    // Estados terminales: jamás se modifican. Una respuesta del usuario
+    // deriva a un ticket NUEVO vinculado (regla de reapertura); nadie más
+    // puede tocar un ticket cerrado o cancelado.
+    if (TERMINAL.includes(ticket.status)) {
+      if (roleFromToken === "usuario") {
+        if (ticket.requester !== actorFromToken) {
+          throw new ForbiddenException("Solo puedes escribir en tus tickets");
+        }
+        const text = dto.note?.trim();
+        if (!text) {
+          throw new ForbiddenException(
+            `El ticket está ${ticket.status} y no puede modificarse. Si el problema persiste, envía una respuesta y registraremos un ticket nuevo.`,
+          );
+        }
+        return this.create(
+          {
+            practice: ticket.practice,
+            subject: `Re: ${ticket.code} — ${ticket.subject}`,
+            description:
+              `Respuesta a ${ticket.code} (estado: ${ticket.status}):\n\n` +
+              `${text}\n\n` +
+              `— Ticket generado automáticamente desde tu respuesta al ticket ${ticket.status}.`,
+            requester: actorFromToken,
+            dept: ticket.dept,
+            priority: ticket.priority,
+          },
+          actorFromToken,
+          "usuario",
+        );
+      }
+      throw new ForbiddenException(
+        `El ticket está ${ticket.status} y no puede modificarse. Si el problema persiste, registra un ticket nuevo.`,
+      );
+    }
+
     // Separación de roles: un usuario final solo puede agregar notas a SUS tickets.
     if (roleFromToken === "usuario") {
       if (ticket.requester !== actorFromToken) {
@@ -318,6 +358,20 @@ export class TicketsService {
         actor,
         detail: dto.note.trim(),
       });
+      // Regla de reapertura: la respuesta de un usuario a un ticket
+      // resuelto ("sigue fallando") lo devuelve automáticamente a
+      // en_progreso. Las notas de agentes NO reabren.
+      if (roleFromToken === "usuario" && ticket.status === "resuelto") {
+        await this.addEvent(ticket.id, {
+          at: now,
+          kind: "estado",
+          actor,
+          from: "resuelto",
+          to: "en_progreso",
+          detail: "Reabierto — el usuario reportó que sigue fallando",
+        });
+        ticket.status = "en_progreso";
+      }
     }
 
     ticket.updatedAt = now;

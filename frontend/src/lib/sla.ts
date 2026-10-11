@@ -48,7 +48,11 @@ export function slaOf(ticket: Ticket, now: number): SlaInfo {
   const remainingMin = targetMin - elapsedMin;
   const progress = Math.min(1, elapsedMin / targetMin);
   let level: SlaLevel = "ok";
-  if (ticket.status === "resuelto" || ticket.status === "cerrado") {
+  if (
+    ticket.status === "resuelto" ||
+    ticket.status === "cerrado" ||
+    ticket.status === "cancelado"
+  ) {
     level = remainingMin >= 0 ? "ok" : "breach";
   } else if (progress >= 1) {
     level = "breach";

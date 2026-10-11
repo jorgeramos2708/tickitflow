@@ -20,10 +20,12 @@ import {
 const STATUS_FILTERS: { value: TicketStatus | "todos"; label: string }[] = [
   { value: "todos", label: "Todos" },
   { value: "nuevo", label: "Nuevo" },
+  { value: "asignado", label: "Asignado" },
   { value: "en_progreso", label: "En progreso" },
-  { value: "pendiente_usuario", label: "Pendiente" },
+  { value: "pendiente_usuario", label: "En espera" },
   { value: "resuelto", label: "Resuelto" },
   { value: "cerrado", label: "Cerrado" },
+  { value: "cancelado", label: "Cancelado" },
 ];
 
 const PRIORITY_FILTERS: (Priority | "todas")[] = [

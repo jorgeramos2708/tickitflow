@@ -16,7 +16,10 @@ export function SLAMeter({
   variant?: "compact" | "large";
 }) {
   const sla = slaOf(ticket, now);
-  const done = ticket.status === "resuelto" || ticket.status === "cerrado";
+  const done =
+    ticket.status === "resuelto" ||
+    ticket.status === "cerrado" ||
+    ticket.status === "cancelado";
   const late = !done && sla.remainingMin < 0;
 
   if (variant === "large") {

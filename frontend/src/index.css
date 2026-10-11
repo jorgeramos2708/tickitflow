@@ -40,8 +40,16 @@
   --color-p2-ink: #ffffff;
   --color-p3: #ca8a04;
   --color-p3-ink: #17181c;
-  --color-p4: #0e8345;
+  --color-p4: #0b6634;
   --color-p4-ink: #ffffff;
+
+  /* Estados de ticket: cada uno pinta su color (temas adaptados) */
+  --color-status-nuevo: #c41e14; /* rojo */
+  --color-status-asignado: #7c3aed; /* morado */
+  --color-status-progreso: #1d4ed8; /* azul rey */
+  --color-status-espera: #a34a0a; /* amarillo/naranja (AA sobre claro) */
+  --color-status-resuelto: #0b6634; /* verde brillante */
+  --color-status-cerrado: #3d434d; /* gris oscuro/negro */
 
   /* Matices de práctica ITIL */
   --color-cobalt: #1d4ed8;
@@ -150,6 +158,14 @@
   --color-p3-ink: #17181c;
   --color-p4: #7ddfa5;
   --color-p4-ink: #17181c;
+
+  /* Estados de ticket — noche */
+  --color-status-nuevo: #ff8f85; /* rojo */
+  --color-status-asignado: #a97df5; /* morado */
+  --color-status-progreso: #6f9df8; /* azul eléctrico */
+  --color-status-espera: #f5a524; /* amarillo/naranja */
+  --color-status-resuelto: #7ddfa5; /* verde menta */
+  --color-status-cerrado: #98a0ad; /* gris (visible sobre oscuro) */
 
   --color-cobalt: #7fa6f0;
   --color-violet: #a97df5;

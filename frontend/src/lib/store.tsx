@@ -18,6 +18,7 @@ import {
 import { slaOf } from "./sla";
 import {
   PRACTICE_PREFIX,
+  TERMINAL_STATUSES,
   approvalsForChangeType,
   type Attachment,
   type Change,
@@ -72,11 +73,14 @@ export interface CreateChangeInput {
 }
 
 const ALLOWED_TRANSITIONS: Record<TicketStatus, TicketStatus[]> = {
-  nuevo: ["en_progreso"],
-  en_progreso: ["pendiente_usuario", "resuelto"],
-  pendiente_usuario: ["en_progreso", "resuelto"],
-  resuelto: ["cerrado"],
+  // Espejo de services/incidents/src/tickets.service.ts (ALLOWED)
+  nuevo: ["asignado", "en_progreso", "cancelado"],
+  asignado: ["en_progreso", "cancelado"],
+  en_progreso: ["pendiente_usuario", "resuelto", "cancelado"],
+  pendiente_usuario: ["en_progreso", "cancelado"],
+  resuelto: ["cerrado", "en_progreso"],
   cerrado: [],
+  cancelado: [],
 };
 
 interface StoreValue {
@@ -102,7 +106,10 @@ interface StoreValue {
   createChange: (input: CreateChangeInput) => Promise<Change>;
   transition: (id: string, to: TicketStatus) => void;
   takeTicket: (id: string) => void;
-  addNote: (id: string, text: string, actor?: string) => void;
+  addNote: (id: string, text: string, actor?: string, isEndUser?: boolean) => void;
+  /** Respuesta a un ticket terminal derivó a uno nuevo (de → a) */
+  derivedNotice: { from: string; to: string } | null;
+  clearDerivedNotice: () => void;
   allowedTransitions: (ticket: Ticket) => TicketStatus[];
   setProblemStatus: (id: string, to: ProblemStatus) => void;
   setProblemRootCause: (id: string, rca: string) => void;
@@ -139,6 +146,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [pulses, setPulses] = useState<Record<string, number>>({});
   const [hydrating, setHydrating] = useState(live);
   const [hydrateFailed, setHydrateFailed] = useState(false);
+  /** Aviso: respuesta a un ticket terminal derivó a uno nuevo vinculado */
+  const [derivedNotice, setDerivedNotice] = useState<{
+    from: string;
+    to: string;
+  } | null>(null);
   const [hasMoreTickets, setHasMoreTickets] = useState(false);
   const levelsRef = useRef<Record<string, string>>({});
 
@@ -325,34 +337,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     (id: string) => {
       mutate(id, (ticket, at) => {
         if (ticket.assignee) return ticket;
-        const withEvent = pushEvent(
+        const withAssign = pushEvent(
           ticket,
           { kind: "asignacion", actor: "Sistema", to: me },
           at,
         );
-        return { ...withEvent, assignee: me };
+        // Tomar un ticket nuevo lo pasa a Asignado (workflow: nuevo→asignado)
+        if (ticket.status !== "nuevo") return { ...withAssign, assignee: me };
+        const withStatus = pushEvent(
+          { ...withAssign, assignee: me },
+          { kind: "estado", actor: me, from: "nuevo", to: "asignado" },
+          at,
+        );
+        return { ...withStatus, status: "asignado" };
       });
       reconcile(id, () =>
         api
-          .patchTicket(authToken ?? "", id, { assignee: me })
+          .patchTicket(authToken ?? "", id, {
+            assignee: me,
+            ...(getTicket(id)?.status === "nuevo" ? { status: "asignado" as const } : {}),
+          })
           .then((dto) => apiToTicket(dto)),
       );
     },
-    [mutate, reconcile, me, authToken],
-  );
-
-  const addNote = useCallback(
-    (id: string, text: string, actor: string = me) => {
-      mutate(id, (ticket, at) =>
-        pushEvent(ticket, { kind: "nota", actor, detail: text }, at),
-      );
-      reconcile(id, () =>
-        api
-          .patchTicket(authToken ?? "", id, { note: text, actor })
-          .then((dto) => apiToTicket(dto)),
-      );
-    },
-    [mutate, reconcile, me, authToken],
+    [mutate, reconcile, me, authToken, getTicket],
   );
 
   const createTicket = useCallback(
@@ -414,6 +422,78 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return created;
     },
     [live, authToken, tickets],
+  );
+
+  const addNote = useCallback(
+    (id: string, text: string, actor: string = me, isEndUser = false) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      const current = getTicket(id);
+      if (!current) return;
+
+      // Regla de reapertura — terminales: la respuesta del usuario deriva a
+      // un ticket NUEVO vinculado; el original jamás se toca.
+      if (isEndUser && TERMINAL_STATUSES.includes(current.status)) {
+        if (live && authToken) {
+          api
+            .patchTicket(authToken, id, { note: trimmed, actor })
+            .then((dto) => {
+              const t = apiToTicket(dto);
+              if (t.id !== id) {
+                setTickets((prev) => [t, ...prev]);
+                setDerivedNotice({ from: id, to: t.id });
+              } else {
+                replaceTicket(t);
+              }
+            })
+            .catch(() => void hydrate());
+        } else {
+          void createTicket({
+            practice: current.practice,
+            subject: `Re: ${current.id} — ${current.subject}`,
+            description:
+              `Respuesta a ${current.id} (estado: ${current.status}):\n\n` +
+              `${trimmed}\n\n` +
+              `— Ticket generado automáticamente desde tu respuesta.`,
+            requester: current.requester,
+            dept: current.dept,
+            priority: current.priority,
+            attachments: [],
+          }).then((t) => setDerivedNotice({ from: id, to: t.id }));
+        }
+        return;
+      }
+
+      mutate(id, (ticket, at) => {
+        const withNote = pushEvent(
+          ticket,
+          { kind: "nota", actor, detail: trimmed },
+          at,
+        );
+        // Demo — reapertura del usuario sobre resuelto (en live la aplica el backend)
+        if (isEndUser && !live && ticket.status === "resuelto") {
+          const withReopen = pushEvent(
+            withNote,
+            {
+              kind: "estado",
+              actor,
+              from: "resuelto",
+              to: "en_progreso",
+              detail: "Reabierto — el usuario reportó que sigue fallando",
+            },
+            at,
+          );
+          return { ...withReopen, status: "en_progreso" };
+        }
+        return withNote;
+      });
+      reconcile(id, () =>
+        api
+          .patchTicket(authToken ?? "", id, { note: trimmed, actor })
+          .then((dto) => apiToTicket(dto)),
+      );
+    },
+    [mutate, reconcile, me, authToken, getTicket, live, hydrate, createTicket, replaceTicket],
   );
 
   const createProblem = useCallback(
@@ -653,6 +733,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     transition,
     takeTicket,
     addNote,
+    derivedNotice,
+    clearDerivedNotice: () => setDerivedNotice(null),
     allowedTransitions,
     setProblemStatus,
     setProblemRootCause,

@@ -1,12 +1,22 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn } from "typeorm";
 
 export type Practice = "incidente" | "requerimiento";
+/**
+ * Workflow de tickets:
+ *  nuevo → asignado → en_progreso ⇄ pendiente_usuario → resuelto → cerrado
+ *  nuevo/asignado/en_progreso/pendiente_usuario → cancelado (terminal)
+ *  resuelto → en_progreso (reapertura por respuesta del usuario)
+ *  cerrado y cancelado son terminales: jamás se modifican; una respuesta
+ *  del usuario genera un ticket nuevo vinculado (Re: CODE — asunto).
+ */
 export type TicketStatus =
   | "nuevo"
+  | "asignado"
   | "en_progreso"
   | "pendiente_usuario"
   | "resuelto"
-  | "cerrado";
+  | "cerrado"
+  | "cancelado";
 export type Priority = "P1" | "P2" | "P3" | "P4";
 
 @Entity("tickets")

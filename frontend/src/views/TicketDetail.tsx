@@ -92,6 +92,7 @@ export function TicketDetail({
   }
 
   const open = OPEN_STATUSES.includes(ticket.status);
+const isTerminal = ticket.status === "cerrado" || ticket.status === "cancelado";
   const sla = slaOf(ticket, now);
   const nextStates = allowedTransitions(ticket);
 
@@ -186,32 +187,43 @@ export function TicketDetail({
           <section className="mt-8" aria-label="Bitácora">
             <h2 className="label text-ink-2">Bitácora</h2>
 
-            <div className="mt-3 rounded-xl border border-rule bg-raised p-3">
-              <TextArea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                    e.preventDefault();
-                    submitNote();
-                  }
-                }}
-                placeholder="Agregar una nota a la bitácora… (visible para el equipo)"
-                aria-label="Nueva nota"
-                className="min-h-16 border-0 bg-transparent focus:border-0"
-              />
-              <div className="flex items-center justify-between px-1 pb-1">
-                <p className="font-mono text-[11px] text-ink-3">Ctrl+⏎ agrega la nota</p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!note.trim()}
-                  onClick={submitNote}
-                >
-                  Agregar nota
-                </Button>
+            {isTerminal ? (
+              <p className="mt-3 rounded-xl border border-rule bg-raised px-4 py-3 text-[13px] leading-relaxed text-ink-3">
+                El ticket está{" "}
+                <strong className="font-semibold text-ink-2">
+                  {STATUS_LABEL[ticket.status].toLowerCase()}
+                </strong>{" "}
+                y no puede modificarse — es un estado terminal. Si el problema
+                persiste, registra un ticket nuevo.
+              </p>
+            ) : (
+              <div className="mt-3 rounded-xl border border-rule bg-raised p-3">
+                <TextArea
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                      e.preventDefault();
+                      submitNote();
+                    }
+                  }}
+                  placeholder="Agregar una nota a la bitácora… (visible para el equipo)"
+                  aria-label="Nueva nota"
+                  className="min-h-16 border-0 bg-transparent focus:border-0"
+                />
+                <div className="flex items-center justify-between px-1 pb-1">
+                  <p className="font-mono text-[11px] text-ink-3">Ctrl+⏎ agrega la nota</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!note.trim()}
+                    onClick={submitNote}
+                  >
+                    Agregar nota
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
 
             <ol className="relative mt-5 space-y-5 border-l border-rule pl-5">
               {ticket.events.map((ev) => (
