@@ -342,25 +342,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           { kind: "asignacion", actor: "Sistema", to: me },
           at,
         );
-        // Tomar un ticket nuevo lo pasa a Asignado (workflow: nuevo→asignado)
-        if (ticket.status !== "nuevo") return { ...withAssign, assignee: me };
-        const withStatus = pushEvent(
-          { ...withAssign, assignee: me },
-          { kind: "estado", actor: me, from: "nuevo", to: "asignado" },
-          at,
-        );
-        return { ...withStatus, status: "asignado" };
+        // Solo asigna: el estado NO cambia automáticamente — pasar a
+        // "asignado" es una transición manual del agente
+        return { ...withAssign, assignee: me };
       });
       reconcile(id, () =>
         api
-          .patchTicket(authToken ?? "", id, {
-            assignee: me,
-            ...(getTicket(id)?.status === "nuevo" ? { status: "asignado" as const } : {}),
-          })
+          .patchTicket(authToken ?? "", id, { assignee: me })
           .then((dto) => apiToTicket(dto)),
       );
     },
-    [mutate, reconcile, me, authToken, getTicket],
+    [mutate, reconcile, me, authToken],
   );
 
   const createTicket = useCallback(
