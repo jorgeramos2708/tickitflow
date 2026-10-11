@@ -41,6 +41,12 @@ http:
       middlewares: [cmdb-strip]
       service: cmdb
       tls: {}
+    clients:
+      rule: PathPrefix(`/api/clients`)
+      entryPoints: [websecure]
+      middlewares: [clients-strip]
+      service: clients
+      tls: {}
     kb:
       rule: PathPrefix(`/api/kb`)
       entryPoints: [websecure]
@@ -88,6 +94,9 @@ http:
     cmdb-strip:
       stripPrefix:
         prefixes: ["/api/cmdb"]
+    clients-strip:
+      stripPrefix:
+        prefixes: ["/api/clients"]
     kb-strip:
       stripPrefix:
         prefixes: ["/api/kb"]
@@ -115,6 +124,10 @@ http:
       loadBalancer:
         servers:
           - url: "http://cmdb:4007"
+    clients:
+      loadBalancer:
+        servers:
+          - url: "http://clients:4010"
     kb:
       loadBalancer:
         servers:
