@@ -101,7 +101,7 @@ function KpiCell({
   count?: number;
   spark: number[];
   prev: number[];
-  deltaKind: "count" | "duration" | "pct";
+  deltaKind: "levelPct" | "levelCount" | "duration" | "pct";
   positiveIsGood: boolean;
   risk?: boolean;
 }) {
@@ -333,7 +333,7 @@ export function Dashboard() {
           count={open.length}
           spark={seriesOf(kpiDays, "open").spark}
           prev={seriesOf(kpiDays, "open").prev}
-          deltaKind="count"
+          deltaKind="levelPct"
           positiveIsGood={false}
         />
         <KpiCell
@@ -343,7 +343,7 @@ export function Dashboard() {
           count={critical.length}
           spark={seriesOf(kpiDays, "atRisk").spark}
           prev={seriesOf(kpiDays, "atRisk").prev}
-          deltaKind="count"
+          deltaKind="levelCount"
           positiveIsGood={false}
         />
         <KpiCell

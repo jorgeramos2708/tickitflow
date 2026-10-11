@@ -105,15 +105,16 @@ export function deriveDaily(tickets: Ticket[], days = 14): KpiDay[] {
   return out;
 }
 
-export type DeltaKind = "count" | "duration" | "pct";
+export type DeltaKind = "levelPct" | "levelCount" | "duration" | "pct";
 
 /**
  * EL helper de delta: compara la semana actual (7 días) con la anterior.
- * Devuelve texto listo ("▲ 14% vs. semana"), el valor crudo ("+14%") para
- * componer resúmenes accesibles, o null si no hay datos.
- * - count: cambio porcentual de sumas
- * - duration: diferencia de promedios en horas ("▼ 6h vs. semana")
- * - pct: diferencia de promedios en puntos ("▲ 4 pp vs. semana")
+ * - levelPct (stock: Abiertos): % del último valor vs. el de la semana
+ *   anterior; sin semana previa → "▲ N nuevos"
+ * - levelCount (stock: En riesgo): absoluto siempre ("▲ N nuevos"/"▼ N menos")
+ * - duration (MTTR): diferencia de promedios en horas ("▼ 6h vs. semana")
+ * - pct (Cumplimiento): diferencia de promedios en puntos ("▼ 40 pts")
+ * Devuelve { text, raw, up } o null si no hay datos comparables.
  */
 export function weeklyDelta(
   currentWeek: number[],
@@ -122,35 +123,58 @@ export function weeklyDelta(
 ): { text: string; raw: string; up: boolean } | null {
   const valid = (xs: number[]) => xs.filter((x) => x >= 0);
   const cur = valid(currentWeek);
+  if (cur.length < 2) return null; // sin datos suficientes en la semana actual
+  const last = cur[cur.length - 1];
+  const avg = (xs: number[]) =>
+    xs.length === 0 ? 0 : xs.reduce((a, b) => a + b, 0) / xs.length;
   const prev = valid(previousWeek);
-  if (cur.length < 2) return null; // sin datos suficientes: ocultar
-  const curSum = cur.reduce((a, b) => a + b, 0);
-  const curAvg = curSum / cur.length;
-  if (prev.length < 2) return null; // semana anterior vacía: nada que comparar
-  const prevSum = prev.reduce((a, b) => a + b, 0);
-  const prevAvg = prevSum / prev.length;
-
   const arrow = (up: boolean) => (up ? "▲" : "▼");
-  if (kind === "count") {
-    if (prevSum === 0) return null;
-    const pct = Math.round(((curSum - prevSum) / prevSum) * 100);
+
+  if (kind === "levelPct" || kind === "levelCount") {
+    const prevLast = prev.length > 0 ? prev[prev.length - 1] : 0;
+    // Sin semana previa (o nivel 0): los actuales son nuevos — visible siempre
+    if (prevLast === 0) {
+      if (last === 0) return null;
+      return { text: `▲ ${last} nuevos`, raw: `+${last}`, up: true };
+    }
+    const diff = Math.round(avg(cur) - avg(prev));
+    if (diff === 0) return null;
+    const up = diff > 0;
+    if (kind === "levelCount") {
+      return {
+        text: `${arrow(up)} ${Math.abs(diff)} ${up ? "nuevos" : "menos"}`,
+        raw: `${up ? "+" : "−"}${Math.abs(diff)}`,
+        up,
+      };
+    }
+    const pct = Math.round((diff / prevLast) * 100);
     if (pct === 0) return null;
-    const up = pct > 0;
-    const raw = `${up ? "+" : "−"}${Math.abs(pct)}%`;
-    return { text: `${arrow(up)} ${Math.abs(pct)}% vs. semana`, raw, up };
+    return {
+      text: `${arrow(up)} ${Math.abs(pct)}% vs. semana`,
+      raw: `${up ? "+" : "−"}${Math.abs(pct)}%`,
+      up,
+    };
   }
+
+  if (prev.length < 2) return null; // semana previa sin datos comparables
+  const up = (d: number) => d > 0;
   if (kind === "duration") {
-    const diffH = Math.round((curAvg - prevAvg) / 60);
+    // La serie viene en minutos → el delta se expresa en horas
+    const diffH = Math.round((avg(cur) - avg(prev)) / 60);
     if (diffH === 0) return null;
-    const up = diffH > 0;
-    const raw = `${up ? "+" : "−"}${Math.abs(diffH)}h`;
-    return { text: `${arrow(up)} ${Math.abs(diffH)}h vs. semana`, raw, up };
+    return {
+      text: `${arrow(up(diffH))} ${Math.abs(diffH)}h vs. semana`,
+      raw: `${diffH > 0 ? "+" : "−"}${Math.abs(diffH)}h`,
+      up: up(diffH),
+    };
   }
-  const diffPp = Math.round(curAvg - prevAvg);
-  if (diffPp === 0) return null;
-  const up = diffPp > 0;
-  const raw = `${up ? "+" : "−"}${Math.abs(diffPp)} pp`;
-  return { text: `${arrow(up)} ${Math.abs(diffPp)} pp vs. semana`, raw, up };
+  const diffPts = Math.round(avg(cur) - avg(prev));
+  if (diffPts === 0) return null;
+  return {
+    text: `${arrow(up(diffPts))} ${Math.abs(diffPts)} pts`,
+    raw: `${diffPts > 0 ? "+" : "−"}${Math.abs(diffPts)} pts`,
+    up: up(diffPts),
+  };
 }
 
 /** Serie de un campo para el sparkline + delta (7 y 7 días previos). */
