@@ -82,3 +82,5 @@ Thumbs.db
 services/*/package-lock.json
 
 frontend/tsconfig.tsbuildinfo
+
+frontend/verify.tmp.mjs
