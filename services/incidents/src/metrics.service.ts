@@ -26,6 +26,16 @@ function startOfDayUtc(ms: number): number {
 }
 
 /**
+ * Momento en que un ticket dejó de estar abierto. Resuelto → resolvedAt;
+ * cancelado (sin resolvedAt) → updatedAt como aproximación del cierre.
+ */
+function terminalAt(t: TicketEntity): number | null {
+  if (t.resolvedAt !== null) return t.resolvedAt.getTime();
+  if (t.status === "cancelado") return t.updatedAt.getTime();
+  return null;
+}
+
+/**
  * Series históricas: métricas diarias por práctica, derivadas de los tickets
  * y persistidas en daily_metrics. El recompute es idempotente (upsert), así
  * que el backfill de los últimos N días es seguro en cada arranque.
@@ -91,8 +101,29 @@ export class MetricsService implements OnApplicationBootstrap {
             t.resolvedAt!.getTime() - t.createdAt.getTime() <=
             SLA_TARGET_MIN[t.priority] * 60_000,
         ).length;
+        // Backlog abierto al cierre del día y cuánto estaba en riesgo de SLA
+        const openRows = rows.filter(
+          (t) =>
+            t.practice === practice &&
+            t.createdAt.getTime() < dayEnd &&
+            (terminalAt(t) === null || terminalAt(t)! >= dayEnd),
+        );
+        const atRiskEnd = openRows.filter(
+          (t) =>
+            dayEnd - t.createdAt.getTime() >=
+            0.8 * SLA_TARGET_MIN[t.priority] * 60_000,
+        ).length;
         await this.metrics.upsert(
-          { day: key, practice, created, resolved, mttrMinutes, withinSla },
+          {
+            day: key,
+            practice,
+            created,
+            resolved,
+            mttrMinutes,
+            withinSla,
+            openAtEnd: openRows.length,
+            atRiskEnd,
+          },
           ["day", "practice"],
         );
       }

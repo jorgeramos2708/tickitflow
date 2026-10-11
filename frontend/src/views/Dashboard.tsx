@@ -4,7 +4,8 @@ import { ArrowDown, ArrowRight, ArrowUp } from "lucide-react";
 import { TicketTable } from "../components/queue/TicketTable";
 import { Button } from "../components/ui/Button";
 import { LoadingBox, Module } from "../components/ui/Module";
-import { KPI_DELTAS, VOLUME_7D } from "../lib/data";
+import { seriesOf, weeklyDelta } from "../lib/kpi";
+import { VOLUME_7D } from "../lib/data";
 import { SLA_LEVEL_TEXT, fmtDuration, fmtRelative, fmtRemaining, slaOf } from "../lib/sla";
 import { useStore } from "../lib/store";
 import { useCountUp } from "../lib/useCountUp";
@@ -41,34 +42,76 @@ function eventText(kind: EventKind, to?: string, detail?: string): string {
   }
 }
 
+/** Sparkline: línea de los últimos 7 días, sin ejes ni relleno. */
+function Sparkline({
+  points,
+  className,
+}: {
+  points: number[];
+  className?: string;
+}) {
+  if (points.length < 2) return null;
+  const w = 100;
+  const h = 28;
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const range = max - min;
+  const step = w / (points.length - 1);
+  const y = (v: number) =>
+    range === 0 ? h / 2 : h - 3 - ((v - min) / range) * (h - 6);
+  const path = points
+    .map((v, i) => `${i === 0 ? "M" : "L"}${(i * step).toFixed(2)},${y(v).toFixed(2)}`)
+    .join(" ");
+  return (
+    <svg
+      viewBox={`0 0 ${w} ${h}`}
+      preserveAspectRatio="none"
+      className={cn("mt-2 h-[28px] w-full", className)}
+      aria-hidden
+    >
+      <path
+        d={path}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  );
+}
+
 function KpiCell({
   label,
   value,
   count,
-  delta,
+  spark,
+  prev,
+  deltaKind,
   positiveIsGood,
-  deltaUnit,
   live = false,
   risk = false,
 }: {
   label: string;
   value: string;
   count?: number;
-  delta: number;
+  spark: number[];
+  prev: number[];
+  deltaKind: "count" | "duration" | "pct";
   positiveIsGood: boolean;
-  deltaUnit: "n" | "m" | "pp";
   live?: boolean;
   risk?: boolean;
 }) {
   const animated = useCountUp(typeof count === "number" ? count : 0);
-  const good = positiveIsGood ? delta >= 0 : delta <= 0;
-  const up = delta >= 0;
-  const unit =
-    deltaUnit === "m"
-      ? up
-        ? `+${fmtDuration(Math.abs(delta))}`
-        : `−${fmtDuration(Math.abs(delta))}`
-      : `${up ? "+" : "−"}${Math.abs(delta)}${deltaUnit === "pp" ? " pp" : ""}`;
+  const delta = weeklyDelta(spark, prev, deltaKind);
+  // Sin datos (menos de 2 puntos): solo el valor — spec
+  const showSeries = spark.filter((p) => p >= 0).length >= 2;
+  const deltaGood = delta
+    ? positiveIsGood
+      ? delta.up
+      : !delta.up
+    : false;
   return (
     <div
       className={cn(
@@ -83,30 +126,28 @@ function KpiCell({
         <span className="font-display text-[32px] leading-none font-extrabold tracking-tight tabular-nums">
           {typeof count === "number" ? animated : value}
         </span>
-        {!live ? (
-          <>
-            <span
-              className={cn(
-                "flex items-center gap-0.5 font-mono text-[11px] tabular-nums",
-                good ? "text-good" : "text-signal",
-              )}
-            >
-              {up ? (
-                <ArrowUp size={10} strokeWidth={2} aria-hidden />
-              ) : (
-                <ArrowDown size={10} strokeWidth={2} aria-hidden />
-              )}
-              {unit}
-            </span>
-            <span
-              className="text-[10.5px] font-semibold text-ink-3"
-              title="Deltas de demostración — no reales en modo demo"
-            >
-              demo
-            </span>
-          </>
+        {delta ? (
+          <span
+            className={cn(
+              "flex items-center gap-0.5 font-mono text-[11px] tabular-nums",
+              deltaGood ? "text-good" : "text-signal",
+            )}
+          >
+            {delta.up ? (
+              <ArrowUp size={10} strokeWidth={2} aria-hidden />
+            ) : (
+              <ArrowDown size={10} strokeWidth={2} aria-hidden />
+            )}
+            {delta.text}
+          </span>
         ) : null}
       </p>
+      {showSeries ? (
+        <Sparkline
+          points={spark}
+          className={risk ? "text-amber-fill" : "text-ink-2"}
+        />
+      ) : null}
     </div>
   );
 }
@@ -191,7 +232,8 @@ function VolumeChart({
 }
 
 export function Dashboard() {
-  const { tickets, now, me, hydrating, hydrateFailed, live, reload } = useStore();
+  const { tickets, now, me, hydrating, hydrateFailed, live, reload, kpiDays } =
+    useStore();
   const navigate = useNavigate();
 
   const open = useMemo(
@@ -283,9 +325,10 @@ export function Dashboard() {
           label="Abiertos"
           value={String(open.length)}
           count={open.length}
-          delta={KPI_DELTAS.abiertos}
+          spark={seriesOf(kpiDays, "open").spark}
+          prev={seriesOf(kpiDays, "open").prev}
+          deltaKind="count"
           positiveIsGood={false}
-          deltaUnit="n"
         />
         <KpiCell
           live={live}
@@ -293,25 +336,28 @@ export function Dashboard() {
           label="En riesgo de SLA"
           value={String(critical.length)}
           count={critical.length}
-          delta={KPI_DELTAS.riesgo}
+          spark={seriesOf(kpiDays, "atRisk").spark}
+          prev={seriesOf(kpiDays, "atRisk").prev}
+          deltaKind="count"
           positiveIsGood={false}
-          deltaUnit="n"
         />
         <KpiCell
           live={live}
           label="MTTR"
           value={mttr === null ? "—" : fmtDuration(mttr)}
-          delta={KPI_DELTAS.mttr}
+          spark={seriesOf(kpiDays, "mttr").spark}
+          prev={seriesOf(kpiDays, "mttr").prev}
+          deltaKind="duration"
           positiveIsGood={false}
-          deltaUnit="m"
         />
         <KpiCell
           live={live}
           label="Cumplimiento SLA"
           value={compliance === null ? "—" : `${compliance.toFixed(1)}%`}
-          delta={KPI_DELTAS.cumplimiento}
+          spark={seriesOf(kpiDays, "compliance").spark}
+          prev={seriesOf(kpiDays, "compliance").prev}
+          deltaKind="pct"
           positiveIsGood
-          deltaUnit="pp"
         />
       </section>
 

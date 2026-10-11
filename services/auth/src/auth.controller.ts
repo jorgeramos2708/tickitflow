@@ -48,10 +48,11 @@ export class AuthController {
   @Get("users")
   @UseGuards(JwtGuard)
   async listUsers(@Req() req: Request) {
+    // RBAC: admin y supervisor ven el directorio; solo admin escribe
     const role =
       (req as unknown as { user?: { role?: string } }).user?.role ?? "";
-    if (role !== "admin") {
-      throw new UnauthorizedException("Solo un administrador puede listar usuarios");
+    if (role !== "admin" && role !== "supervisor") {
+      throw new UnauthorizedException("Solo administradores o supervisores pueden listar usuarios");
     }
     return this.auth.listUsers();
   }

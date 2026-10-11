@@ -176,6 +176,8 @@ export interface ApiMetric {
   resolved: number;
   mttrMinutes: number;
   withinSla: number;
+  openAtEnd: number;
+  atRiskEnd: number;
 }
 
 export const api = {
@@ -362,6 +364,33 @@ export const api = {
       "/notifications/settings/smtp/test",
       token,
       { method: "POST" },
+    ),
+
+  // ── Administración de usuarios (RBAC) ──
+  listUsers: (token: string) =>
+    request<{ email: string; name: string; role: string }[]>(
+      "/auth/users",
+      token,
+    ),
+
+  createUser: (
+    token: string,
+    body: { email: string; name: string; role: string; password: string },
+  ) =>
+    request("/auth/users", token, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  updateUser: (
+    token: string,
+    email: string,
+    body: { name?: string; role?: string },
+  ) =>
+    request(
+      `/auth/users/${encodeURIComponent(email)}`,
+      token,
+      { method: "PATCH", body: JSON.stringify(body) },
     ),
 
   listMetrics: (token: string, days = 14) =>

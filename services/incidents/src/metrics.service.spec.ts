@@ -70,6 +70,11 @@ describe("MetricsService.recompute", () => {
     // MTTR: INC-1 3h + INC-2 30h + INC-4 2h = 35h / 3 ≈ 700 min
     expect(day7!.mttrMinutes).toBe(700);
     expect(day7!.withinSla).toBe(2); // INC-1 y INC-4 dentro; INC-2 fuera
+    // Backlog al cierre del día 7 (medianoche del 8): solo INC-3 sigue abierto
+    expect(day7!.openAtEnd).toBe(1);
+    // INC-3 es P3 (objetivo 24h, riesgo al 80% = 19.2h); creado a las 3h →
+    // al cierre del día lleva 21h ≥ 19.2h → en riesgo
+    expect(day7!.atRiskEnd).toBe(1);
   });
 
   it("día sin resueltos deja MTTR en 0", async () => {
@@ -84,5 +89,24 @@ describe("MetricsService.recompute", () => {
     const day7 = upserts.find((u) => u.day === "2026-10-07");
     expect(day7!.resolved).toBe(0);
     expect(day7!.mttrMinutes).toBe(0);
+  });
+
+  it("ticket CANCELADO sale del backlog usando updatedAt como cierre", async () => {
+    const cancelled = ticket("INC-C", -30, null);
+    cancelled.status = "cancelado";
+    // Cancelado el día 7 a mediodía: al cierre del día 6 seguía abierto
+    cancelled.updatedAt = new Date(Date.UTC(2026, 9, 7, 12, 0, 0));
+    const { service, upserts } = makeService([cancelled]);
+    const realNow = Date.now;
+    Date.now = () => Date.UTC(2026, 9, 7, 13, 0, 0);
+    try {
+      await service.recompute(2);
+    } finally {
+      Date.now = realNow;
+    }
+    const day6 = upserts.find((u) => u.day === "2026-10-06");
+    const day7 = upserts.find((u) => u.day === "2026-10-07");
+    expect(day6!.openAtEnd).toBe(1); // abierto al cierre del día 6
+    expect(day7!.openAtEnd).toBe(0); // cancelado antes del cierre del día 7
   });
 });

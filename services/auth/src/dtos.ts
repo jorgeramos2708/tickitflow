@@ -26,7 +26,7 @@ export class CreateUserDto {
   @MaxLength(120)
   name!: string;
 
-  @IsIn(["admin", "agente", "usuario"], {
+  @IsIn(["admin", "supervisor", "agente", "usuario"], {
     message: "Rol no válido",
   })
   role!: string;
@@ -45,7 +45,7 @@ export class UpdateUserDto {
   name?: string;
 
   @IsOptional()
-  @IsIn(["admin", "agente", "usuario"], {
+  @IsIn(["admin", "supervisor", "agente", "usuario"], {
     message: "Rol no válido",
   })
   role?: string;

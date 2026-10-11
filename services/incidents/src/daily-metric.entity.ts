@@ -25,6 +25,14 @@ export class DailyMetricEntity {
 
   @Column({ name: "within_sla", type: "integer" })
   withinSla!: number;
+
+  /** Backlog abierto al cierre del día (KPI "Abiertos"). */
+  @Column({ name: "open_at_end", type: "integer" })
+  openAtEnd!: number;
+
+  /** Abiertos en riesgo o vencidos de SLA al cierre del día (KPI "En riesgo"). */
+  @Column({ name: "at_risk_end", type: "integer" })
+  atRiskEnd!: number;
 }
 
 export interface MetricDto {
@@ -34,6 +42,8 @@ export interface MetricDto {
   resolved: number;
   mttrMinutes: number;
   withinSla: number;
+  openAtEnd: number;
+  atRiskEnd: number;
 }
 
 export function metricToDto(m: DailyMetricEntity): MetricDto {
@@ -44,5 +54,7 @@ export function metricToDto(m: DailyMetricEntity): MetricDto {
     resolved: m.resolved,
     mttrMinutes: m.mttrMinutes,
     withinSla: m.withinSla,
+    openAtEnd: m.openAtEnd,
+    atRiskEnd: m.atRiskEnd,
   };
 }

@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -41,8 +42,14 @@ import {
   apiToCi,
   apiToProblem,
   apiToTicket,
+  type ApiMetric,
 } from "./api";
 import { useAuth } from "./auth";
+import {
+  deriveDaily,
+  metricsToDaily,
+  type KpiDay,
+} from "./kpi";
 import { useMode } from "./mode";
 
 export interface CreateTicketInput {
@@ -97,6 +104,8 @@ interface StoreValue {
   live: boolean;
   hasMoreTickets: boolean;
   loadMoreTickets: () => Promise<void>;
+  /** Series diarias de KPIs (14 días, para sparkline + delta semanal) */
+  kpiDays: KpiDay[];
   /** Reintento manual tras una hidratación fallida */
   reload: () => Promise<void>;
   pulses: Record<string, number>;
@@ -152,6 +161,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     to: string;
   } | null>(null);
   const [hasMoreTickets, setHasMoreTickets] = useState(false);
+  const [kpiRows, setKpiRows] = useState<ApiMetric[]>([]);
   const levelsRef = useRef<Record<string, string>>({});
 
   const pulse = useCallback((id: string) => {
@@ -194,22 +204,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  /** Series de KPI: del backend en live; derivadas de la cola en demo */
+  const kpiDays = useMemo<KpiDay[]>(
+    () =>
+      live && kpiRows.length > 0
+        ? metricsToDaily(kpiRows, 14)
+        : deriveDaily(tickets, 14),
+    [live, kpiRows, tickets],
+  );
+
   const hydrate = useCallback(async () => {
     if (!live || !authToken) return;
     try {
-      const [ticketDtos, problemDtos, changeDtos, ciDtos, articleDtos] =
+      const [ticketDtos, problemDtos, changeDtos, ciDtos, articleDtos, metricRows] =
         await Promise.all([
           api.listTickets(authToken, 100),
           api.listProblems(authToken),
           api.listChanges(authToken),
           api.listCis(authToken),
           api.listArticles(authToken),
+          // Series de KPI (14 días: sparkline + delta vs semana anterior);
+          // toleramos que este endpoint no esté aún desplegado
+          api.listMetrics(authToken, 14).catch(() => [] as ApiMetric[]),
         ]);
       setTickets(ticketDtos.map(apiToTicket));
       setProblems(problemDtos.map(apiToProblem));
       setChanges(changeDtos.map(apiToChange));
       setCis(ciDtos.map(apiToCi));
       setArticles(articleDtos.map(apiToArticle));
+      setKpiRows(metricRows);
       // Si llegaron 100, probablemente hay más (paginación)
       setHasMoreTickets(ticketDtos.length >= 100);
       setHydrateFailed(false);
@@ -712,10 +735,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     now,
     me,
     hydrating,
-  hydrateFailed,
+    hydrateFailed,
     live,
     hasMoreTickets,
     loadMoreTickets,
+    kpiDays,
   reload: hydrate,
     pulses,
     getTicket,
