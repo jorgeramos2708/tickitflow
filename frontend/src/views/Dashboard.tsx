@@ -364,9 +364,9 @@ export function Dashboard() {
         />
       </section>
 
-      <section className="mt-8" aria-label="Cola SLA crítico">
+      <section className="mt-8" aria-label="Tickets pendientes">
         <div className="mb-3 flex flex-wrap items-center gap-3">
-          <h2 className="text-[15px] font-semibold tracking-tight">SLA crítico</h2>
+          <h2 className="text-[15px] font-semibold tracking-tight">Tickets pendientes</h2>
           <Link
             to="/cola/incidente"
             className="ml-auto flex items-center gap-1 text-[13px] link-grow hover:link-grow-hover font-bold text-amber hover:text-amber-hi"
@@ -465,7 +465,7 @@ export function Dashboard() {
           </ul>
         </Module>
 
-        <Module title="Volumen 7 días" className="lg:col-span-3">
+        <Module title="Últimos 7 días" className="lg:col-span-3">
           <div className="px-4 py-3">
             <VolumeChart data={volume} live={live} />
             <p className="mt-3 flex items-center gap-1.5 font-mono text-[11px] text-ink-3">

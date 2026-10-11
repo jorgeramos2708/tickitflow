@@ -20,7 +20,10 @@ export function SLAMeter({
     ticket.status === "resuelto" ||
     ticket.status === "cerrado" ||
     ticket.status === "cancelado";
-  const late = !done && sla.remainingMin < 0;
+  // A punto de vencer: >= 80% del objetivo consumido (escala con la
+  // prioridad: P1 avisa a ~48 min, P3 a ~4.8 h, P4 a ~9.6 h restantes).
+  // Vencido NO lleva punto — el punto solo anuncia "está por vencer".
+  const aboutToBreach = !done && sla.level === "warn";
 
   if (variant === "large") {
     return (
@@ -38,8 +41,8 @@ export function SLAMeter({
               SLA_LEVEL_TEXT[sla.level],
             )}
           >
-            {late ? (
-              <span aria-hidden className="size-2 shrink-0 self-center rounded-full bg-signal animate-pulse-dot" />
+            {aboutToBreach ? (
+              <span aria-hidden className="size-2 shrink-0 self-center rounded-full bg-amber-fill animate-pulse-dot" />
             ) : null}
             {done
               ? sla.remainingMin >= 0
@@ -69,8 +72,8 @@ export function SLAMeter({
           SLA_LEVEL_TEXT[sla.level],
         )}
       >
-        {late ? (
-          <span aria-hidden className="size-2 shrink-0 rounded-full bg-signal animate-pulse-dot" />
+        {aboutToBreach ? (
+          <span aria-hidden className="size-2 shrink-0 rounded-full bg-amber-fill animate-pulse-dot" />
         ) : null}
         {done
           ? sla.remainingMin >= 0

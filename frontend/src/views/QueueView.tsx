@@ -17,7 +17,10 @@ import {
   type TicketStatus,
 } from "../lib/types";
 
-const STATUS_FILTERS: { value: TicketStatus | "todos"; label: string }[] = [
+const STATUS_FILTERS: {
+  value: TicketStatus | "todos";
+  label: string;
+}[] = [
   { value: "todos", label: "Todos" },
   { value: "nuevo", label: "Nuevo" },
   { value: "asignado", label: "Asignado" },
@@ -27,6 +30,25 @@ const STATUS_FILTERS: { value: TicketStatus | "todos"; label: string }[] = [
   { value: "cerrado", label: "Cerrado" },
   { value: "cancelado", label: "Cancelado" },
 ];
+
+/** Color del chip de filtro activo por estado (mismo lenguaje del StatusBadge) */
+const STATUS_ACTIVE: Record<TicketStatus, string> = {
+  nuevo: "border-status-nuevo/40 bg-status-nuevo/15 text-status-nuevo",
+  asignado: "border-status-asignado/40 bg-status-asignado/15 text-status-asignado",
+  en_progreso: "border-status-progreso/40 bg-status-progreso/15 text-status-progreso",
+  pendiente_usuario: "border-status-espera/40 bg-status-espera/15 text-status-espera",
+  resuelto: "border-status-resuelto/40 bg-status-resuelto/15 text-status-resuelto",
+  cerrado: "border-status-cerrado/40 bg-status-cerrado/15 text-status-cerrado",
+  cancelado: "border-rule-2 bg-raised text-ink-3",
+};
+
+/** Color del chip de filtro activo por prioridad (semáforo relleno) */
+const PRIORITY_ACTIVE: Record<Priority, string> = {
+  P1: "border-transparent bg-p1 text-p1-ink",
+  P2: "border-transparent bg-p2 text-p2-ink",
+  P3: "border-transparent bg-p3 text-p3-ink",
+  P4: "border-transparent bg-p4 text-p4-ink",
+};
 
 const PRIORITY_FILTERS: (Priority | "todas")[] = [
   "todas",
@@ -40,10 +62,13 @@ function FilterChip({
   active,
   children,
   onClick,
+  activeClass,
 }: {
   active: boolean;
   children: ReactNode;
   onClick: () => void;
+  /** Clases del estado activo (color por estado/prioridad); default ámbar */
+  activeClass?: string;
 }) {
   return (
     <button
@@ -53,7 +78,7 @@ function FilterChip({
       className={cn(
         "h-7 cursor-pointer rounded-lg border px-2.5 text-[12px] font-semibold transition-all duration-200 hover:-translate-y-px",
         active
-          ? "border-amber-fill bg-amber-fill text-amber-fill-ink"
+          ? (activeClass ?? "border-amber-fill bg-amber-fill text-amber-fill-ink")
           : "border-rule text-ink-2 hover:border-amber",
       )}
     >
@@ -187,6 +212,7 @@ export function QueueView() {
             key={f.value}
             active={status === f.value}
             onClick={() => setStatus(f.value)}
+            activeClass={f.value === "todos" ? undefined : STATUS_ACTIVE[f.value]}
           >
             {f.label}
           </FilterChip>
@@ -197,6 +223,7 @@ export function QueueView() {
             key={p}
             active={priority === p}
             onClick={() => setPriority(p)}
+            activeClass={p === "todas" ? undefined : PRIORITY_ACTIVE[p]}
           >
             {p === "todas" ? "Todas" : p}
           </FilterChip>
