@@ -28,7 +28,7 @@ export function Acceso() {
     <div className="flex min-h-screen items-center justify-center bg-paper px-5">
       <div className="w-full max-w-sm animate-rise">
         <div className="flex justify-center">
-          <LogoLockup />
+          <LogoLockup size={135} />
         </div>
         <div className="mt-6 rounded-xl border border-rule bg-raised px-6 py-6">
           <h1 className="font-display text-[20px] leading-tight font-extrabold tracking-tight">
@@ -75,10 +75,6 @@ export function Acceso() {
             </Button>
           </form>
         </div>
-        <p className="mt-4 text-center font-mono text-[11.5px] leading-relaxed text-ink-3">
-          Cuentas de demostración (contraseña demo1234):<br />
-          agente@tickitflow.dev · usuario@tickitflow.dev · admin@tickitflow.dev
-        </p>
         <p className="mt-3 text-center text-[12.5px] text-ink-3">
           ¿Primera vez?{" "}
           <Link
