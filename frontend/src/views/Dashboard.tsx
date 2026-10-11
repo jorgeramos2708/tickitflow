@@ -90,7 +90,6 @@ function KpiCell({
   prev,
   deltaKind,
   positiveIsGood,
-  live = false,
   risk = false,
 }: {
   label: string;
@@ -100,7 +99,6 @@ function KpiCell({
   prev: number[];
   deltaKind: "count" | "duration" | "pct";
   positiveIsGood: boolean;
-  live?: boolean;
   risk?: boolean;
 }) {
   const animated = useCountUp(typeof count === "number" ? count : 0);
@@ -321,7 +319,6 @@ export function Dashboard() {
         className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4"
       >
         <KpiCell
-          live={live}
           label="Abiertos"
           value={String(open.length)}
           count={open.length}
@@ -331,7 +328,6 @@ export function Dashboard() {
           positiveIsGood={false}
         />
         <KpiCell
-          live={live}
           risk
           label="En riesgo de SLA"
           value={String(critical.length)}
@@ -342,7 +338,6 @@ export function Dashboard() {
           positiveIsGood={false}
         />
         <KpiCell
-          live={live}
           label="MTTR"
           value={mttr === null ? "—" : fmtDuration(mttr)}
           spark={seriesOf(kpiDays, "mttr").spark}
@@ -351,7 +346,6 @@ export function Dashboard() {
           positiveIsGood={false}
         />
         <KpiCell
-          live={live}
           label="Cumplimiento SLA"
           value={compliance === null ? "—" : `${compliance.toFixed(1)}%`}
           spark={seriesOf(kpiDays, "compliance").spark}
