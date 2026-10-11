@@ -109,7 +109,8 @@ export type DeltaKind = "count" | "duration" | "pct";
 
 /**
  * EL helper de delta: compara la semana actual (7 días) con la anterior.
- * Devuelve texto listo ("▲ 14% vs. semana") o null si no hay datos.
+ * Devuelve texto listo ("▲ 14% vs. semana"), el valor crudo ("+14%") para
+ * componer resúmenes accesibles, o null si no hay datos.
  * - count: cambio porcentual de sumas
  * - duration: diferencia de promedios en horas ("▼ 6h vs. semana")
  * - pct: diferencia de promedios en puntos ("▲ 4 pp vs. semana")
@@ -118,7 +119,7 @@ export function weeklyDelta(
   currentWeek: number[],
   previousWeek: number[],
   kind: DeltaKind,
-): { text: string; up: boolean } | null {
+): { text: string; raw: string; up: boolean } | null {
   const valid = (xs: number[]) => xs.filter((x) => x >= 0);
   const cur = valid(currentWeek);
   const prev = valid(previousWeek);
@@ -135,18 +136,21 @@ export function weeklyDelta(
     const pct = Math.round(((curSum - prevSum) / prevSum) * 100);
     if (pct === 0) return null;
     const up = pct > 0;
-    return { text: `${arrow(up)} ${Math.abs(pct)}% vs. semana`, up };
+    const raw = `${up ? "+" : "−"}${Math.abs(pct)}%`;
+    return { text: `${arrow(up)} ${Math.abs(pct)}% vs. semana`, raw, up };
   }
   if (kind === "duration") {
     const diffH = Math.round((curAvg - prevAvg) / 60);
     if (diffH === 0) return null;
     const up = diffH > 0;
-    return { text: `${arrow(up)} ${Math.abs(diffH)}h vs. semana`, up };
+    const raw = `${up ? "+" : "−"}${Math.abs(diffH)}h`;
+    return { text: `${arrow(up)} ${Math.abs(diffH)}h vs. semana`, raw, up };
   }
   const diffPp = Math.round(curAvg - prevAvg);
   if (diffPp === 0) return null;
   const up = diffPp > 0;
-  return { text: `${arrow(up)} ${Math.abs(diffPp)} pp vs. semana`, up };
+  const raw = `${up ? "+" : "−"}${Math.abs(diffPp)} pp`;
+  return { text: `${arrow(up)} ${Math.abs(diffPp)} pp vs. semana`, raw, up };
 }
 
 /** Serie de un campo para el sparkline + delta (7 y 7 días previos). */

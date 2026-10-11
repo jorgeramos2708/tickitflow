@@ -46,9 +46,12 @@ function eventText(kind: EventKind, to?: string, detail?: string): string {
 function Sparkline({
   points,
   className,
+  summary,
 }: {
   points: number[];
   className?: string;
+  /** Resumen accesible de la tendencia (p.ej. "Abiertos: tendencia al alza…") */
+  summary: string;
 }) {
   if (points.length < 2) return null;
   const w = 100;
@@ -67,7 +70,8 @@ function Sparkline({
       viewBox={`0 0 ${w} ${h}`}
       preserveAspectRatio="none"
       className={cn("mt-2 h-[28px] w-full", className)}
-      aria-hidden
+      role="img"
+      aria-label={summary}
     >
       <path
         d={path}
@@ -110,6 +114,10 @@ function KpiCell({
       ? delta.up
       : !delta.up
     : false;
+  // Resumen accesible de la tarjeta ("Abiertos: tendencia al alza, +14% vs. semana anterior")
+  const sparkSummary = delta
+    ? `${label}: tendencia ${delta.up ? "al alza" : "a la baja"}, ${delta.raw} vs. semana anterior`
+    : `${label}: sin cambios significativos vs. semana anterior`;
   return (
     <div
       className={cn(
@@ -144,6 +152,7 @@ function KpiCell({
         <Sparkline
           points={spark}
           className={risk ? "text-amber-fill" : "text-ink-2"}
+          summary={sparkSummary}
         />
       ) : null}
     </div>
