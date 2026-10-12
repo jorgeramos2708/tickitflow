@@ -87,7 +87,7 @@ export function Landing() {
             </div>
             <LogoMark
               size={168}
-              className="hidden shrink-0 text-amber-fill lg:block"
+              className="hidden shrink-0 text-ink lg:block"
             />
           </div>
         </section>

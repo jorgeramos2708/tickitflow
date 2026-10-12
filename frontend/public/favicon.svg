@@ -1,9 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <mask id="n">
-    <rect x="-4" y="-4" width="72" height="72" fill="black"/>
-    <rect x="0" y="0" width="64" height="64" rx="10" fill="white"/>
-    <circle cx="64" cy="32" r="9" fill="black"/>
-  </mask>
-  <rect x="0" y="0" width="64" height="64" rx="10" fill="#DA291C" mask="url(#n)"/>
-  <path d="M15 36 H29.5 L38 45 L53 22" fill="none" stroke="#FBFBF9" stroke-width="7" stroke-linecap="square" stroke-linejoin="miter"/>
+  <defs>
+    <mask id="n">
+      <rect x="-4" y="-4" width="72" height="72" fill="black"/>
+      <rect x="0" y="0" width="64" height="64" rx="12" fill="white"/>
+      <circle cx="64" cy="32" r="8" fill="black"/>
+    </mask>
+  </defs>
+  <rect x="0" y="0" width="64" height="64" rx="12" fill="#f5a524" mask="url(#n)"/>
+  <path d="M14 32 H26 L32 42 L46 20" fill="none" stroke="#17181c" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
