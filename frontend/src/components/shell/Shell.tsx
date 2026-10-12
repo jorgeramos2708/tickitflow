@@ -24,9 +24,6 @@ import {
 import { cn } from "../../lib/cn";
 import { LogoLockup } from "../../brand/Logo";
 import { useAuth } from "../../lib/auth";
-import { useStore } from "../../lib/store";
-import { OPEN_STATUSES } from "../../lib/types";
-import { slaOf } from "../../lib/sla";
 import { NotificationsBell } from "./Notifications";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -69,48 +66,6 @@ interface RailSection {
   id: string;
   label: string;
   items: RailItem[];
-}
-
-function useRailData() {
-  const { tickets, problems, changes, now, me } = useStore();
-
-  const openIncidents = tickets.filter(
-    (t) => t.practice === "incidente" && OPEN_STATUSES.includes(t.status),
-  );
-  const openRequests = tickets.filter(
-    (t) => t.practice === "requerimiento" && OPEN_STATUSES.includes(t.status),
-  );
-  const atRisk = tickets.filter(
-    (t) => OPEN_STATUSES.includes(t.status) && slaOf(t, now).level !== "ok",
-  );
-  const criticalIncidents = openIncidents.filter(
-    (t) => slaOf(t, now).level === "breach",
-  );
-  const unassigned = tickets.filter(
-    (t) => OPEN_STATUSES.includes(t.status) && t.assignee === null,
-  );
-  const myTickets = tickets.filter(
-    (t) => t.assignee === me && OPEN_STATUSES.includes(t.status),
-  );
-  const pendingApprovals = changes.filter((c) => c.status === "en_revision");
-  const openProblems = problems.filter(
-    (p) => p.status === "nuevo" || p.status === "investigacion",
-  );
-  const openChanges = changes.filter((c) => c.status === "en_revision");
-
-  return {
-    openIncidents: openIncidents.length,
-    openRequests: openRequests.length,
-    atRisk: atRisk.length,
-    criticalIncidents: criticalIncidents.length,
-    unassigned: unassigned.length,
-    myTickets: myTickets.length,
-    pendingApprovals: pendingApprovals.length,
-    openProblems: openProblems.length,
-    openChanges: openChanges.length,
-    hasSlaAlert: atRisk.length > 0,
-    hasApprovalAlert: pendingApprovals.length > 0,
-  };
 }
 
 function fmtCount(n: number): string {
@@ -378,7 +333,6 @@ export function PracticeRail({ onOpenPalette }: { onOpenPalette: () => void }) {
     localStorage.getItem("tickitflow.rail.collapsed") === "true",
   );
   const { user, logout, live } = useAuth();
-  const data = useRailData();
   const { pathname } = useLocation();
 
   useEffect(() => {
@@ -411,44 +365,19 @@ export function PracticeRail({ onOpenPalette }: { onOpenPalette: () => void }) {
       label: "Mi trabajo",
       items: [
         { to: "/", label: "Dashboard", icon: "dashboard" },
-        { to: "/mis-tickets", label: "Mis tickets", icon: "mis", count: data.myTickets },
-        { to: "/sin-asignar", label: "Sin asignar", icon: "sinAsignar", count: data.unassigned },
-        {
-          to: "/aprobaciones",
-          label: "Aprobaciones",
-          icon: "aprobaciones",
-          count: data.pendingApprovals,
-          alert: data.hasApprovalAlert ? "approval" : undefined,
-        },
+        { to: "/mis-tickets", label: "Mis tickets", icon: "mis" },
+        { to: "/sin-asignar", label: "Sin asignar", icon: "sinAsignar" },
+        { to: "/aprobaciones", label: "Aprobaciones", icon: "aprobaciones" },
       ],
     },
     {
       id: "gestion",
       label: "Gestión",
       items: [
-        {
-          to: "/cola/incidente",
-          label: "Incidentes",
-          icon: "incidente",
-          count: data.openIncidents,
-          alert: data.hasSlaAlert ? "sla" : undefined,
-          subItems: [
-            {
-              to: "/cola/incidente?filtro=criticos",
-              label: "Críticos",
-              count: data.criticalIncidents,
-            },
-            {
-              to: "/cola/incidente?filtro=sla",
-              label: "En riesgo de SLA",
-              count: data.atRisk,
-              alert: data.atRisk > 0,
-            },
-          ],
-        },
-        { to: "/cola/requerimiento", label: "Requerimientos", icon: "requerimiento", count: data.openRequests },
-        { to: "/problemas", label: "Problemas", icon: "problema", count: data.openProblems },
-        { to: "/cambios", label: "Cambios", icon: "cambio", count: data.openChanges },
+        { to: "/cola/incidente", label: "Incidentes", icon: "incidente" },
+        { to: "/cola/requerimiento", label: "Requerimientos", icon: "requerimiento" },
+        { to: "/problemas", label: "Problemas", icon: "problema" },
+        { to: "/cambios", label: "Cambios", icon: "cambio" },
       ],
     },
     {
