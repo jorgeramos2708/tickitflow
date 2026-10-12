@@ -115,10 +115,12 @@ export class EmailService implements OnModuleInit {
 
     const criticalKeys = [
       "ticket.created",
+      "ticket.assigned",
       "problem.created",
       "change.approved",
       "change.rejected",
       "sla.breach",
+      "sla.warning",
     ];
     if (!criticalKeys.includes(event.routingKey)) return;
 

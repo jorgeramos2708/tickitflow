@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bell, X } from "lucide-react";
 import { api, type ApiNotification } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
@@ -9,10 +9,14 @@ import { useStore } from "../../lib/store";
 const ROUTING_TEXT: Record<string, string> = {
   "ticket.created": "Ticket registrado",
   "ticket.updated": "Ticket actualizado",
+  "ticket.assigned": "Asignado a ti",
   "problem.updated": "Problema actualizado",
+  "problem.created": "Problema registrado",
   "change.updated": "Cambio actualizado",
   "change.approved": "Cambio aprobado",
   "change.rejected": "Cambio rechazado",
+  "sla.warning": "SLA en riesgo",
+  "sla.breach": "SLA vencido",
 };
 
 export function NotificationsBell() {
@@ -21,9 +25,29 @@ export function NotificationsBell() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<ApiNotification[]>([]);
   const [lastEvent, setLastEvent] = useState<ApiNotification | null>(null);
+  const [lastSeenId, setLastSeenId] = useState<number>(() =>
+    Number(localStorage.getItem("tickitflow.notifications.seen")) || 0,
+  );
   const wrapRef = useRef<HTMLDivElement>(null);
   const bellRef = useRef<HTMLButtonElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
+
+  // No leídas: notificaciones más recientes que la última vista
+  const unreadCount = useMemo(() => {
+    if (items.length === 0) return 0;
+    return items.filter((n) => n.id > lastSeenId).length;
+  }, [items, lastSeenId]);
+
+  // Marcar como leídas al abrir el popover
+  const markSeen = useCallback(() => {
+    if (items.length > 0) {
+      const maxId = Math.max(...items.map((n) => n.id));
+      if (maxId > lastSeenId) {
+        setLastSeenId(maxId);
+        localStorage.setItem("tickitflow.notifications.seen", String(maxId));
+      }
+    }
+  }, [items, lastSeenId]);
 
   // D7: Escape y click-fuera cierran; el foco entra al abrir (dialog)
   useEffect(() => {
@@ -137,18 +161,27 @@ export function NotificationsBell() {
         onClick={() => {
           setOpen((v) => !v);
           load();
+          if (!open) markSeen();
         }}
-        aria-label={`Notificaciones (${items.length})`}
+        aria-label={`Notificaciones${unreadCount > 0 ? `, ${unreadCount} sin leer` : ""}`}
         aria-expanded={open}
         aria-haspopup="dialog"
         className={cn(
-          "flex size-8 cursor-pointer items-center justify-center rounded-xl transition-colors duration-150",
+          "relative flex size-8 cursor-pointer items-center justify-center rounded-xl transition-colors duration-150",
           open
             ? "bg-ink text-paper"
             : "text-ink-3 hover:bg-ink/5 hover:text-ink",
         )}
       >
         <Bell size={15} strokeWidth={1.75} aria-hidden />
+        {unreadCount > 0 ? (
+          <span
+            aria-hidden
+            className="absolute -top-0.5 -right-0.5 flex min-w-[16px] items-center justify-center rounded-full bg-signal px-1 font-mono text-[9px] font-bold leading-4 text-paper"
+          >
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </span>
+        ) : null}
       </button>
 
       {open ? (

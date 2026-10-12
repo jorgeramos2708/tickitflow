@@ -40,7 +40,6 @@ const ALLOWED: Record<TicketStatus, TicketStatus[]> = {
 };
 
 const TERMINAL: TicketStatus[] = ["cerrado", "cancelado"];
-
 export interface EventInput {
   at: Date;
   kind: string;
@@ -388,6 +387,55 @@ export class TicketsService {
       actor,
       summary: `${result.code} — estado ${result.status}${result.assignee ? " · asignado a " + result.assignee : ""}`,
     });
+
+    // Evento dedicado de asignación: el receptor lo ve en su campana
+    if (dto.assignee && dto.assignee !== ticket.assignee) {
+      await publishEvent("ticket.assigned", {
+        code: result.code,
+        status: result.status,
+        assignee: result.assignee,
+        requester: result.requester,
+        subject: result.subject,
+        actor,
+        summary: `${result.code} te fue asignado — ${result.subject}`,
+      });
+    }
+
+    // Evento de advertencia SLA: el ticket entra en zona de riesgo (>=80%)
+    if (
+      !TERMINAL.includes(result.status as TicketStatus) &&
+      result.resolvedAt === null
+    ) {
+      const slaLevel = this.slaLevelOf(ticket);
+      if (slaLevel === "warn" || slaLevel === "breach") {
+        await publishEvent("sla.warning", {
+          code: result.code,
+          status: result.status,
+          assignee: result.assignee,
+          requester: result.requester,
+          subject: result.subject,
+          actor: "Sistema",
+          summary:
+            slaLevel === "breach"
+              ? `${result.code} VENCIÓ — ${result.subject}`
+              : `${result.code} está a punto de vencer — ${result.subject}`,
+        });
+      }
+    }
+
     return result;
+  }
+
+  /** Nivel de SLA simple: breach si transcurrido > objetivo, warn si >= 80%. */
+  private slaLevelOf(ticket: TicketEntity): "ok" | "warn" | "breach" {
+    const targetMin: Record<string, number> = {
+      P1: 240, P2: 480, P3: 1440, P4: 2880,
+    };
+    const elapsedMin =
+      (Date.now() - ticket.createdAt.getTime()) / 60_000;
+    const target = targetMin[ticket.priority] ?? 1440;
+    if (elapsedMin >= target) return "breach";
+    if (elapsedMin >= target * 0.8) return "warn";
+    return "ok";
   }
 }
