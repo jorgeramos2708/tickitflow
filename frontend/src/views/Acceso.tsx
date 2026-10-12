@@ -27,8 +27,18 @@ export function Acceso() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-paper px-5">
       <div className="w-full max-w-sm animate-rise">
-        <div className="flex justify-center">
-          <LogoMark size={120} className="text-ink animate-logo" />
+        <div className="flex flex-col items-center gap-3">
+          <LogoMark size={88} className="text-ink animate-logo" />
+          <p
+            className="font-display text-[36px] leading-none font-extrabold tracking-tight text-ink"
+            style={{ animation: "rise 450ms cubic-bezier(.2,.8,.2,1) 200ms both" }}
+          >
+            Tick
+            <span className="mx-[2px] inline-flex -translate-y-[2px] items-center rounded-lg bg-amber-fill px-[6px] py-[4px] leading-none text-amber-fill-ink">
+              IT
+            </span>
+            Flow
+          </p>
         </div>
         <div className="mt-6 rounded-xl border border-rule bg-raised px-6 py-6">
           <h1 className="font-display text-[20px] leading-tight font-extrabold tracking-tight">
