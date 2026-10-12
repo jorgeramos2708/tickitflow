@@ -118,6 +118,55 @@
   }
 }
 
+/** Logo: la línea de pulso se dibuja sola y late (login) */
+@keyframes logo-draw {
+  0% {
+    stroke-dashoffset: 60;
+  }
+  60% {
+    stroke-dashoffset: 0;
+  }
+  70% {
+    stroke-dashoffset: 0;
+  }
+  80% {
+    stroke-dashoffset: -3;
+  }
+  90% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes logo-beat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  8% {
+    transform: scale(1.06);
+  }
+  16% {
+    transform: scale(1);
+  }
+  24% {
+    transform: scale(1.04);
+  }
+  32% {
+    transform: scale(1);
+  }
+}
+
+@utility animate-logo {
+  path {
+    stroke-dasharray: 60;
+    animation: logo-draw 1.8s cubic-bezier(0.2, 0.8, 0.2, 1) both,
+      logo-beat 3s ease-in-out 1.8s infinite;
+    transform-origin: center;
+  }
+}
+
 @keyframes shimmer {
   to {
     background-position: -200% 0;
