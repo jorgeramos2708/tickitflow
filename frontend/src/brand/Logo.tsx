@@ -48,7 +48,7 @@ export function LogoMark({
  * El texto es SVG (no DOM) para escalar proporcionalmente.
  */
 export function LogoLockup({
-  size = 45,
+  size = 40,
   showText = true,
   className,
 }: {
