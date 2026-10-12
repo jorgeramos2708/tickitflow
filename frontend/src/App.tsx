@@ -6,6 +6,7 @@ import { StoreProvider } from "./lib/store";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ChangesView, ChangeDetail } from "./views/ChangesView";
 import { CmdbView } from "./views/CmdbView";
+import { MisTicketsView, SinAsignarView, AprobacionesView } from "./views/MisVistas";
 import { ClientesView } from "./views/ClientesView";
 import { KbArticleView, KbView } from "./views/KbView";
 import { ProblemDetail, ProblemsView } from "./views/ProblemsView";
@@ -111,9 +112,9 @@ function Shell() {
       >
         Saltar al contenido
       </a>
-      <TopBar onOpenPalette={() => setPaletteOpen(true)} />
+      <TopBar />
       <div className="flex min-h-0 flex-1">
-        <PracticeRail />
+        <PracticeRail onOpenPalette={() => setPaletteOpen(true)} />
         <main
           id="contenido"
           className="min-w-0 flex-1 overflow-y-auto px-5 py-7 md:px-8"
@@ -131,6 +132,9 @@ function Shell() {
             <Route path="/problemas/:id" element={<ProblemDetail />} />
             <Route path="/cambios" element={<ChangesView />} />
             <Route path="/cambios/:id" element={<ChangeDetail />} />
+            <Route path="/mis-tickets" element={<MisTicketsView />} />
+            <Route path="/sin-asignar" element={<SinAsignarView />} />
+            <Route path="/aprobaciones" element={<AprobacionesView />} />
             <Route path="/cmdb" element={<CmdbView />} />
             <Route path="/clientes" element={<ClientesView />} />
             <Route path="/kb" element={<KbView />} />

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ArrowDown, ArrowRight, ArrowUp } from "lucide-react";
 import { TicketTable } from "../components/queue/TicketTable";
 import { Button } from "../components/ui/Button";
@@ -184,7 +184,7 @@ function volumeData(
 export function Dashboard() {
   const { tickets, now, me, hydrating, hydrateFailed, live, reload, kpiDays } =
     useStore();
-  const navigate = useNavigate();
+  
 
   const open = useMemo(
     () => tickets.filter((t) => OPEN_STATUSES.includes(t.status)),
@@ -249,20 +249,6 @@ export function Dashboard() {
             Turno de {me} · {DATE_FMT.format(now)} ·{" "}
             <span className="font-mono tabular-nums">{TIME_FMT.format(now)}</span>
           </p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => navigate("/nuevo?practice=requerimiento")}
-          >
-            Nuevo requerimiento
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => navigate("/nuevo?practice=incidente")}
-          >
-            Nuevo incidente
-          </Button>
         </div>
       </div>
 

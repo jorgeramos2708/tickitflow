@@ -31,23 +31,44 @@ const STATUS_FILTERS: {
   { value: "cancelado", label: "Cancelado" },
 ];
 
-/** Color del chip de filtro activo por estado (mismo lenguaje del StatusBadge) */
-const STATUS_ACTIVE: Record<TicketStatus, string> = {
-  nuevo: "border-status-nuevo/40 bg-status-nuevo/15 text-status-nuevo",
-  asignado: "border-status-asignado/40 bg-status-asignado/15 text-status-asignado",
-  en_progreso: "border-status-progreso/40 bg-status-progreso/15 text-status-progreso",
-  pendiente_usuario: "border-status-espera/40 bg-status-espera/15 text-status-espera",
-  resuelto: "border-status-resuelto/40 bg-status-resuelto/15 text-status-resuelto",
-  cerrado: "border-status-cerrado/40 bg-status-cerrado/15 text-status-cerrado",
-  cancelado: "border-rule-2 bg-raised text-ink-3",
+/** Hover y activo por estado (mismo lenguaje del StatusBadge) */
+const STATUS_STYLE: Record<TicketStatus, { active: string; hover: string }> = {
+  nuevo: {
+    active: "border-status-nuevo/40 bg-status-nuevo/15 text-status-nuevo",
+    hover: "hover:border-status-nuevo/60",
+  },
+  asignado: {
+    active: "border-status-asignado/40 bg-status-asignado/15 text-status-asignado",
+    hover: "hover:border-status-asignado/60",
+  },
+  en_progreso: {
+    active: "border-status-progreso/40 bg-status-progreso/15 text-status-progreso",
+    hover: "hover:border-status-progreso/60",
+  },
+  pendiente_usuario: {
+    active: "border-status-espera/40 bg-status-espera/15 text-status-espera",
+    hover: "hover:border-status-espera/60",
+  },
+  resuelto: {
+    active: "border-status-resuelto/40 bg-status-resuelto/15 text-status-resuelto",
+    hover: "hover:border-status-resuelto/60",
+  },
+  cerrado: {
+    active: "border-status-cerrado/40 bg-status-cerrado/15 text-status-cerrado",
+    hover: "hover:border-status-cerrado/60",
+  },
+  cancelado: {
+    active: "border-rule-2 bg-raised text-ink-3",
+    hover: "hover:border-rule-2",
+  },
 };
 
-/** Color del chip de filtro activo por prioridad (semáforo relleno) */
-const PRIORITY_ACTIVE: Record<Priority, string> = {
-  P1: "border-transparent bg-p1 text-p1-ink",
-  P2: "border-transparent bg-p2 text-p2-ink",
-  P3: "border-transparent bg-p3 text-p3-ink",
-  P4: "border-transparent bg-p4 text-p4-ink",
+/** Hover y activo por prioridad (semáforo relleno) */
+const PRIORITY_STYLE: Record<Priority, { active: string; hover: string }> = {
+  P1: { active: "border-transparent bg-p1 text-p1-ink", hover: "hover:border-p1/60" },
+  P2: { active: "border-transparent bg-p2 text-p2-ink", hover: "hover:border-p2/60" },
+  P3: { active: "border-transparent bg-p3 text-p3-ink", hover: "hover:border-p3/60" },
+  P4: { active: "border-transparent bg-p4 text-p4-ink", hover: "hover:border-p4/60" },
 };
 
 const PRIORITY_FILTERS: (Priority | "todas")[] = [
@@ -63,12 +84,15 @@ function FilterChip({
   children,
   onClick,
   activeClass,
+  hoverClass,
 }: {
   active: boolean;
   children: ReactNode;
   onClick: () => void;
   /** Clases del estado activo (color por estado/prioridad); default ámbar */
   activeClass?: string;
+  /** Clases del hover (color del propio filtro); default ámbar */
+  hoverClass?: string;
 }) {
   return (
     <button
@@ -79,7 +103,7 @@ function FilterChip({
         "h-7 cursor-pointer rounded-lg border px-2.5 text-[12px] font-semibold transition-all duration-200 hover:-translate-y-px",
         active
           ? (activeClass ?? "border-amber-fill bg-amber-fill text-amber-fill-ink")
-          : "border-rule text-ink-2 hover:border-amber",
+          : cn("border-rule text-ink-2", hoverClass ?? "hover:border-amber"),
       )}
     >
       {children}
@@ -212,7 +236,8 @@ export function QueueView() {
             key={f.value}
             active={status === f.value}
             onClick={() => setStatus(f.value)}
-            activeClass={f.value === "todos" ? undefined : STATUS_ACTIVE[f.value]}
+            activeClass={f.value === "todos" ? undefined : STATUS_STYLE[f.value].active}
+            hoverClass={f.value === "todos" ? undefined : STATUS_STYLE[f.value].hover}
           >
             {f.label}
           </FilterChip>
@@ -223,7 +248,8 @@ export function QueueView() {
             key={p}
             active={priority === p}
             onClick={() => setPriority(p)}
-            activeClass={p === "todas" ? undefined : PRIORITY_ACTIVE[p]}
+            activeClass={p === "todas" ? undefined : PRIORITY_STYLE[p].active}
+            hoverClass={p === "todas" ? undefined : PRIORITY_STYLE[p].hover}
           >
             {p === "todas" ? "Todas" : p}
           </FilterChip>
