@@ -228,7 +228,7 @@ function RailItemWithSubs({
           aria-current={active ? "page" : undefined}
           aria-label={item.count !== undefined && item.count > 0 ? `${item.label}, ${item.count}` : item.label}
           className={cn(
-            "group relative flex min-w-0 flex-1 items-center gap-2.5 rounded-l-lg py-2 pr-1 text-[13px] transition-colors duration-150",
+            "group relative flex min-w-0 flex-1 items-center gap-2.5 rounded-l-lg py-2 pl-3 text-[13px] transition-colors duration-150",
             active ? "bg-amber-fill/10 font-medium text-amber" : "text-ink-2 hover:bg-ink/5",
           )}
         >
@@ -238,6 +238,7 @@ function RailItemWithSubs({
           <Icon size={16} strokeWidth={1.75} aria-hidden className="shrink-0" />
           <span className="min-w-0 flex-1 truncate">{item.label}</span>
           <RailCount count={item.count ?? 0} alert={item.alert} />
+          <span className="w-2 shrink-0" aria-hidden />
         </Link>
         {item.subItems ? (
           <button
@@ -247,7 +248,7 @@ function RailItemWithSubs({
             aria-label={`${isOpen ? "Colapsar" : "Expandir"} ${item.label}`}
             onClick={() => setIsOpen(!isOpen)}
             className={cn(
-              "flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-r-lg transition-colors",
+              "flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-r-lg transition-colors",
               active ? "text-amber/70 hover:text-amber" : "text-ink-3/50 hover:text-ink-3",
             )}
           >

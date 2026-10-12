@@ -167,6 +167,15 @@ export function QueueView() {
   const [priority, setPriority] = useState<Priority | "todas">("todas");
   const [query, setQuery] = useState("");
 
+  // Sub-vistas desde el sidebar: ?filtro=criticos / ?filtro=sla
+  const filtro = searchParams.get("filtro");
+  useEffect(() => {
+    if (filtro === "criticos") {
+      setStatus("todos");
+      setPriority("todas");
+    }
+  }, [filtro]);
+
   const valid: Practice | null =
     practice === "incidente" || practice === "requerimiento" ? practice : null;
 
@@ -175,15 +184,25 @@ export function QueueView() {
     const q = query.trim().toLowerCase();
     return tickets.filter((t) => {
       if (t.practice !== valid) return false;
-      if (status !== "todos" && t.status !== status) return false;
-      if (priority !== "todas" && t.priority !== priority) return false;
+      if (filtro === "criticos") {
+        // Críticos: abiertos con SLA vencido
+        if (!OPEN_STATUSES.includes(t.status)) return false;
+        if (slaOf(t, now).level !== "breach") return false;
+      } else if (filtro === "sla") {
+        // En riesgo de SLA: abiertos con nivel warn o breach
+        if (!OPEN_STATUSES.includes(t.status)) return false;
+        if (slaOf(t, now).level === "ok") return false;
+      } else {
+        if (status !== "todos" && t.status !== status) return false;
+        if (priority !== "todas" && t.priority !== priority) return false;
+      }
       if (q) {
         const haystack = `${t.id} ${t.subject} ${t.requester}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       return true;
     });
-  }, [tickets, valid, status, priority, query]);
+  }, [tickets, valid, status, priority, query, filtro, now]);
 
   const open = useMemo(
     () =>
@@ -213,13 +232,20 @@ export function QueueView() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-[34px] leading-[1.1] font-extrabold tracking-tight">
-            {PRACTICE_LABEL[valid]}s
+            {filtro === "criticos"
+              ? "Incidentes críticos"
+              : filtro === "sla"
+                ? "En riesgo de SLA"
+                : `${PRACTICE_LABEL[valid]}s`}
           </h1>
           <p className="mt-1 text-[13px] text-ink-3">
-            {open.length} abiertos ·{" "}
-            <span className={atRisk > 0 ? "font-mono tabular-nums text-amber" : ""}>
-              {atRisk} en riesgo de SLA
-            </span>
+            {filtered.length} {filtro ? (filtered.length === 1 ? "ticket" : "tickets") : "abiertos"}
+            {filtro ? "" : " · "}
+            {!filtro ? (
+              <span className={atRisk > 0 ? "font-mono tabular-nums text-amber" : ""}>
+                {atRisk} en riesgo de SLA
+              </span>
+            ) : null}
           </p>
         </div>
         <Button
