@@ -17,19 +17,19 @@ TickITFlow gestiona el ciclo completo de soporte de TI con las seis prácticas I
 
 ## Ejecución
 
-### Con Caddy (producción, detrás de Cloudflare)
+### Con nginx (producción, detrás de Cloudflare)
 
-El Caddy del host (en `caddy_net`) rutea `tickitflow.edrs.xyz` a los servicios. Los servicios se conectan a `caddy_net` automáticamente.
+El nginx del host (en `tickit_net`) rutea `tickitflow.edrs.xyz` a los servicios. Los servicios se conectan a `tickit_net` automáticamente.
 
 ```bash
-# En el servidor (después de agregar el bloque al Caddyfile del host):
+# En el servidor (después de agregar el bloque al nginx.conf del host):
 cd /opt/tickitflow
 docker compose up -d --build
 ```
 
 ### Despliegue independiente (Traefik con certificados manuales)
 
-Para infraestructura sin Caddy ni Cloudflare:
+Para infraestructura Sin nginx ni Cloudflare:
 
 ```bash
 # Coloca los certificados
@@ -44,10 +44,10 @@ docker compose -f docker-compose.yml -f docker-compose.traefik.yml up -d --build
 ### Desarrollo local
 
 ```bash
-# Crear la red de Caddy si no existe
-docker network create caddy_net
+# Crear la red externa si no existe
+docker network create tickit_net
 
-# Levantar sin gateway (los servicios quedan en caddy_net)
+# Levantar sin gateway (los servicios quedan en tickit_net)
 docker compose up -d --build
 
 # O con Traefik standalone para probar el gateway completo
@@ -148,13 +148,13 @@ Total: 30 tests backend + 21 frontend + 18 smoke E2E = **69 verificaciones**.
 
 ## Producción
 
-### Con Caddy (arquitectura actual)
+### Con nginx (arquitectura actual)
 
 ```
-Cloudflare → Caddy (caddy_net) → auth:4001, incidents:4003, ..., frontend:80
+nginx (tickit_net) → auth:4001, incidents:4003, ..., frontend:80
 ```
 
-El Caddyfile del host tiene el bloque `tickitflow.edrs.xyz` que rutea cada `/api/<servicio>/*` al microservicio correspondiente (con `handle_path` que strip el prefijo).
+El nginx.conf del host tiene el bloque `tickitflow.edrs.xyz` que rutea cada `/api/<servicio>/*` al microservicio correspondiente (con `handle_path` que strip el prefijo).
 
 ### Con Traefik independiente
 
@@ -165,12 +165,12 @@ Internet → Traefik :443 (certificados manuales) → servicios
 El override `docker-compose.traefik.yml` agrega el gateway Traefik con:
 - Redirect HTTP :80 → HTTPS :443
 - Certificados montados desde `certs/`
-- Rutas con `stripPrefix` (equivalente a `handle_path` de Caddy)
+- Rutas con `stripPrefix` (equivalente a stripPrefix de nginx)
 
 ### Requisitos del servidor
 
 - Docker + Docker Compose
-- Red `caddy_net` existente (o crearla con `docker network create caddy_net`)
+- Red `tickit_net` existente (o crearla con `docker network create tickit_net`)
 - DNS: `tickitflow.edrs.xyz` → IP del servidor (vía Cloudflare)
 
 ## CI/CD

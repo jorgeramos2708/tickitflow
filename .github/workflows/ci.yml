@@ -62,7 +62,7 @@ jobs:
       - name: Levantar el stack completo (gateway HTTP para CI)
         shell: bash
         run: |
-          docker network create caddy_net 2>/dev/null || true
+          docker network create tickit_net 2>/dev/null || true
           docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --build
       - name: Verificar stack
         shell: bash
@@ -137,11 +137,11 @@ jobs:
             git clean -fd -e .env -e certs/ -e docker-compose.override.yml
             echo "Git: $(git log --oneline -1)"
 
-            # Override de red: conectar a caddy_net del host
+            # Override de red: conectar a tickit_net del host
             cat > docker-compose.override.yml << 'OVR'
             networks:
               default:
-                name: caddy_net
+                name: tickit_net
                 external: true
             OVR
 

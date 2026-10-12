@@ -1,5 +1,5 @@
 # Override para CI: agrega gateway Traefik HTTP plano (sin TLS).
-# Usa la misma red caddy_net que el compose base (se crea en el paso de CI).
+# Usa la misma red tickit_net que el compose base (se crea en el paso de CI).
 
 services:
   gateway:

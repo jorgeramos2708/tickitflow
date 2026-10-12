@@ -1,2 +1,2 @@
-# Este archivo ya no es necesario — Caddy corre fuera del compose de TickITFlow.
+# Este archivo ya no es necesario — El reverse proxy corre fuera del compose de TickITFlow.
 # Para despliegue independiente con Traefik, usa docker-compose.traefik.yml.

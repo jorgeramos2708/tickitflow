@@ -1,4 +1,4 @@
-# Configuración dinámica de Traefik con TLS manual (sin Caddy ni Cloudflare).
+# Configuración dinámica de Traefik con TLS manual (sin nginx ni Cloudflare).
 # Para despliegue independiente de TickITFlow en infraestructura propia.
 #
 # Requisitos:

@@ -1,9 +1,9 @@
 name: tickitflow
 
-# TickITFlow — 7 microservicios NestJS detrás del Caddy del host (caddy_net)
+# TickITFlow — 7 microservicios NestJS detrás del nginx del host (tickit_net)
 #
 # Producción: el deploy script crea docker-compose.override.yml en el servidor
-#             con la configuración de red externa caddy_net.
+#             con la configuración de red externa tickit_net.
 #
 # CI/Desarrollo: funciona standalone sin red externa.
 
